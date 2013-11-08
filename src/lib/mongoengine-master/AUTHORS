@@ -1,0 +1,174 @@
+The PRIMARY AUTHORS are (and/or have been):
+
+Ross Lawley <ross.lawley@gmail.com>
+Harry Marr <harry@hmarr.com>
+Matt Dennewitz <mattdennewitz@gmail.com>
+Deepak Thukral <iapain@yahoo.com>
+Florian Schlachter <flori@n-schlachter.de>
+Steve Challis <steve@stevechallis.com>
+Wilson Júnior <wilsonpjunior@gmail.com>
+Dan Crosta https://github.com/dcrosta
+Laine Herron https://github.com/LaineHerron
+
+CONTRIBUTORS
+
+Dervived from the git logs, inevitably incomplete but all of whom and others
+have submitted patches, reported bugs and generally helped make MongoEngine
+that much better:
+
+ * blackbrrr
+ * Florian Schlachter
+ * Vincent Driessen
+ * Steve Challis
+ * flosch
+ * Deepak Thukral
+ * Colin Howe
+ * Wilson Júnior (https://github.com/wpjunior)
+ * Alistair Roche
+ * Dan Crosta
+ * Viktor Kerkez
+ * Stephan Jaekel
+ * Rached Ben Mustapha
+ * Greg Turner
+ * Daniel Hasselrot
+ * Mircea Pasoi
+ * Matt Chisholm
+ * James Punteney
+ * TimothéePeignier
+ * Stuart Rackham
+ * Serge Matveenko
+ * Matt Dennewitz
+ * Don Spaulding
+ * Ales Zoulek
+ * sshwsfc
+ * sib
+ * Samuel Clay
+ * Nick Vlku
+ * martin
+ * Flavio Amieiro
+ * Анхбаяр Лхагвадорж
+ * Zak Johnson
+ * Victor Farazdagi
+ * vandersonmota
+ * Theo Julienne
+ * sp
+ * Slavi Pantaleev
+ * Richard Henry
+ * Nicolas Perriault
+ * Nick Vlku Jr
+ * Michael Henson
+ * Leo Honkanen
+ * kuno
+ * Josh Ourisman
+ * Jaime
+ * Igor Ivanov
+ * Gregg Lind
+ * Gareth Lloyd
+ * Albert Choi
+ * John Arnfield
+ * grubberr
+ * Paul Aliagas
+ * Paul Cunnane
+ * Julien Rebetez
+ * Marc Tamlyn
+ * Karim Allah
+ * Adam Parrish
+ * jpfarias
+ * jonrscott
+ * Alice Zoë Bevan-McGregor (https://github.com/amcgregor/)
+ * Stephen Young
+ * tkloc
+ * aid
+ * yamaneko1212
+ * dave mankoff
+ * Alexander G. Morano
+ * jwilder
+ * Joe Shaw
+ * Adam Flynn
+ * Ankhbayar
+ * Jan Schrewe
+ * David Koblas
+ * Crittercism
+ * Alvin Liang
+ * andrewmlevy
+ * Chris Faulkner
+ * Ashwin Purohit
+ * Shalabh Aggarwal
+ * Chris Williams
+ * Robert Kajic
+ * Jacob Peddicord
+ * Nils Hasenbanck
+ * mostlystatic
+ * Greg Banks
+ * swashbuckler
+ * Adam Reeve
+ * Anthony Nemitz
+ * deignacio
+ * Shaun Duncan
+ * Meir Kriheli
+ * Andrey Fedoseev
+ * aparajita
+ * Tristan Escalada
+ * Alexander Koshelev
+ * Jaime Irurzun
+ * Alexandre González
+ * Thomas Steinacher
+ * Tommi Komulainen
+ * Peter Landry
+ * biszkoptwielki
+ * Anton Kolechkin
+ * Sergey Nikitin
+ * psychogenic
+ * Stefan Wójcik
+ * dimonb
+ * Garry Polley
+ * James Slagle
+ * Adrian Scott
+ * Peter Teichman
+ * Jakub Kot
+ * Jorge Bastida
+ * Aleksandr Sorokoumov
+ * Yohan Graterol
+ * bool-dev
+ * Russ Weeks
+ * Paul Swartz
+ * Sundar Raman
+ * Benoit Louy
+ * lraucy
+ * hellysmile
+ * Jaepil Jeong
+ * Daniil Sharou
+ * Stefan Wójcik
+ * Pete Campton
+ * Martyn Smith
+ * Marcelo Anton
+ * Aleksey Porfirov
+ * Nicolas Trippar
+ * Manuel Hermann
+ * Gustavo Gawryszewski
+ * Max Countryman
+ * caitifbrito
+ * lcya86 刘春洋
+ * Martin Alderete (https://github.com/malderete)
+ * Nick Joyce
+ * Jared Forsyth
+ * Kenneth Falck
+ * Lukasz Balcerzak
+ * Nicolas Cortot
+ * Alex (https://github.com/kelsta)
+ * Jin Zhang
+ * Daniel Axtens
+ * Leo-Naeka
+ * Ryan Witt (https://github.com/ryanwitt)
+ * Jiequan (https://github.com/Jiequan)
+ * hensom (https://github.com/hensom)
+ * zhy0216 (https://github.com/zhy0216)
+ * istinspring (https://github.com/istinspring)
+ * Massimo Santini (https://github.com/mapio)
+ * Nigel McNie (https://github.com/nigelmcnie)
+ * ygbourhis (https://github.com/ygbourhis)
+ * Bob Dickinson (https://github.com/BobDickinson)
+ * Michael Bartnett (https://github.com/michaelbartnett)
+ * Alon Horev (https://github.com/alonho)
+ * Kelvin Hammond (https://github.com/kelvinhammond)
+ * Jatin- (https://github.com/jatin-)

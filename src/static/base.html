@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html class="login">
+<head>
+<meta charset="utf-8">
+<title>Flotag</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- <link href="css/bootstrap-responsive.css" rel="stylesheet">
+ --><link rel="stylesheet" href="css/normalize.css">
+<link href="css/bootstrap_cosmo.css" rel="stylesheet" media="screen">
+<link rel="stylesheet" href="css/font-awesome.min.css">
+<link rel="stylesheet" type="text/css"
+	href="css/tagmanager.css">
+<link rel="stylesheet" type="text/css"
+	href="css/typeahead.js-bootstrap.css">
+
+<link rel="stylesheet" type="text/css" href="css/style.css">
+<script src="js/libs/jquery-1.9.1.js"></script>
+<script src="js/libs/json2.js"></script>
+
+<script src="js/libs/handlebars-1.0.0.js"></script>
+<script src="js/libs/jquery.color-2.1.2.min.js"></script>
+
+<script src="js/libs/bootstrap.js"></script>
+<script src="js/libs/tagmanager.js"></script>
+
+
+<script src="js/libs/ember-1.0.0.js"></script>
+<script src="js/libs/Router.js"></script>
+
+<script src="js/app.js"></script>
+
+</head>
+
+<body>
+
+	
+
+
+<script type="text/x-handlebars">
+
+{{outlet}}
+</script>
+
+
+<script type="text/x-handlebars-template" data-template-name="posts">
+<h2>test</h2>
+<!-- 	<div class="navbar navbar-fixed-top">
+		<div class="navbar-inner ">
+			<a class="brand " href="#"><img class="logo"
+				src="/static/images/flotagv8_bold1.png"></a>
+
+			<ul class="nav pull-right">
+				<li class="active"><a href="#">Home</a></li>
+				<li class="divider-vertical"></li>
+				<li><a href="#">Profile</a></li>
+				<li class="divider-vertical"></li>
+				<li class="dropdown"><a class="dropdown-toggle"
+					data-toggle="dropdown" href="#"> <i class="icon-cogs"></i>
+				</a>
+					<ul class="dropdown-menu">
+						<li><a href="#">Edit Profile</a></li>
+						<li><a href="#">Logout</a></li>
+					</ul></li>
+			</ul>
+			<form class="form-search pull-right">
+				<div class="input-append">
+					<input type="text" class="span2 search-query" placeholder="Search">
+
+					<button type="submit" class="btn">
+						<i class="icon-search"></i>
+					</button>
+				</div>
+			</form>
+			<a id="not-globe" class="pull-right" href="#"><i
+				class="icon-globe icon-large"></i></a>
+
+		</div>
+	</div> -->
+
+</script>
+
+<script type="text/x-handlebars" data-template-name="login">
+<div class="login">
+<div id="curves"  >
+<canvas id="canvas" width="1500" height="1500"/>
+</div>
+<div class="navbar">
+		<div class="navbar-inner ">
+			<a class="brand " href="#"><img class="logo"
+				src="/static/images/flotagv8_bold1.png"></a>
+		</div>
+</div>
+<div class="container-fluid login">
+		<div class="row">
+			<div class="span3" id="leftCol">
+				<form id="login-form" class="login-form" {{action login on="submit"}}>
+				<label class="control-label" for="inputUsername">Username</label>
+					
+				  {{input id="inputUsername" value=username type="text" placeholder="Username" class="form-control"}}
+				  <label class="control-label" for="inputPassword">Password</label>
+				  
+				  {{input value=password type="password" placeholder="Password" class="form-control"}}
+				  <div class="checkbox">
+				    <label>
+				      {{input type="checkbox"}} Remember Me
+
+				    </label>
+				  </div>
+				  {{input class="btn btn-primary" type="submit" value="Sign in"}}
+				</form>
+				<h3>Or</h3>
+				<div class="tm-tag tm-tag-success">
+				<button type="submit" class="btn btn-primary"  onClick="parent.location='register.html'">Register!</button>
+				</div>
+		</div>
+		<div class="span9">
+		  <div id="alert" class="alert hidden">
+	            <button type="button" class="close" data-dismiss="alert">&times;</button>
+	            <h4>Incorrect Login info.</h4> 
+          </div>
+		<div class="info-box tm-tag">
+				<h3><strong>Welcome to Flotag</strong></h3>
+					<h4>Get quality updates on what you care about.</h4>
+		</div>
+		</div>
+		
+	</div>
+	</div>
+</div>
+<script src="js/login.js"></script>
+</script>
+
+
+</body>
+
+
+</html>

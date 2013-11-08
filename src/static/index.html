@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html class="login">
+<head>
+<meta charset="utf-8">
+<title>Flotag</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- <link href="css/bootstrap-responsive.css" rel="stylesheet">
+ -->
+ <link rel="stylesheet" href="css/normalize.css">
+<link href="css/bootstrap_cosmo.css" rel="stylesheet" media="screen">
+<link rel="stylesheet" href="css/font-awesome.min.css">
+<link rel="stylesheet" type="text/css"
+	href="css/tagmanager.css">
+<link rel="stylesheet" type="text/css"
+	href="css/typeahead.js-bootstrap.css">
+<link rel="stylesheet" type="text/css"
+	href="css/bootstrap-fileupload.css">
+<link rel="stylesheet" type="text/css" href="css/style.css">
+<script src="js/libs/jquery-1.9.1.js"></script>
+<script src="js/libs/jquery.inview.min.js"></script>
+
+<script src="js/libs/json2.js"></script>
+
+<script src="js/libs/handlebars-1.0.0.js"></script>
+<script src="js/libs/jquery.color-2.1.2.min.js"></script>
+
+<script src="js/libs/bootstrap.js"></script>
+<script src="js/libs/typeahead.js"></script>
+
+<script src="js/libs/tagmanager.js"></script>
+<script type="text/javascript">
+	window.ENV = window.ENV || {};
+  window.ENV["EXPERIMENTAL_CONTROL_HELPER"] = true;
+</script>
+<script src="js/libs/ember-1.0.0.js"></script>
+<script src="js/libs/swag.js"></script>
+
+<script src="js/libs/Router.js"></script>
+<!-- <script src="js/libs/require.js"></script> -->
+
+
+<script src="js/libs/bootstrap-fileupload.js"></script>
+
+<script src="js/app.js"></script>
+
+<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+<link rel="icon" href="/favicon.ico" type="image/x-icon">
+<script>
+    // Will use window.Handlebars or Ember.Handlebars if you're using Ember.
+    Swag.registerHelpers();
+</script>
+<!-- <script src="js/login.js"></script>
+ -->
+</head>
+
+<body>
+
+	
+
+
+<script type="text/x-handlebars">
+{{#if protected}}
+{{#if currentUser.active}}
+{{outlet}}
+{{else}}
+<h1></h1>
+{{/if}}
+{{else}}
+{{outlet}}
+{{/if}}
+</script>
+
+
+<script type="text/x-handlebars" data-template-name="verify">
+
+  <div class="login">
+  <div id="curves"  >
+
+  <canvas id="canvas" class="login-back" width="1500" height="1500"/>
+  </div>
+  <div class="navbar">
+      <div class="navbar-inner ">
+        <a class="brand " href="#"><img class="logo"
+          src="/images/flotagv8_bold1.png"></a>
+      </div>
+  </div>
+
+  {{#if this.verification}}
+    <h1>Verification Complete! Click <a href="/">here</a> to be redirected to the login page.
+  {{else}}
+    <h1>Sorry, but I couldn't verify you.
+
+  {{/if}}
+</script>
+
+
+<script type="text/x-handlebars" data-template-name="login">
+
+	<div class="login">
+	<div id="curves"  >
+
+	<canvas id="canvas" class="login-back" width="1500" height="1500"/>
+	</div>
+	<div class="navbar">
+			<div class="navbar-inner ">
+				<a class="brand " href="#"><img class="logo"
+					src="/images/flotagv8_bold1.png"></a>
+			</div>
+	</div>
+	<div class="container-fluid login">
+			<div class="row">
+				<div class="span3" id="leftCol">
+					<form id="login-form" class="login-form" {{action login on="submit"}}>
+					<label class="control-label" for="inputUsername">Username</label>
+						
+					  {{input id="inputUsername" value=username type="text" placeholder="Username" class="form-control"}}
+					  <label class="control-label" for="inputPassword">Password</label>
+					  
+					  {{input value=password type="password" placeholder="Password" class="form-control"}}
+<!-- 					  <div class="checkbox">
+					    <label>
+					      {{input type="checkbox"}} Remember Me
+
+					    </label>
+					  </div> -->
+            <button type="submit" class="btn btn-primary" >Sign in</button>
+					</form>
+					<h3>Or</h3>
+					<div class="tm-tag tm-tag-success">
+					<button type="submit" class="btn btn-primary"  onClick="parent.location='register.html'">Register!</button>
+					</div>
+			</div>
+			<div class="span9">
+			  <div id="alert" class="alert hidden">
+		            <button type="button" class="close" data-dismiss="alert">&times;</button>
+		            <h4>Incorrect Login info.</h4> 
+		            
+	          </div>
+			<div class="info-box tm-tag">
+					<h3><strong>Welcome to Flotag</strong></h3>
+						<h4>Get quality updates on what you care about.</h4>
+			</div>
+			</div>
+			
+		</div>
+		</div>
+	</div>
+	
+</script>
+
+<script type="text/x-handlebars" data-template-name="index">
+<div class="fixed-nav-page">
+{{partial "_nav_bar"}}
+
+<div class="container-fluid">
+   <div class="row-fluid">
+      <div class="span2 myspan" id="leftCol">
+         <div class="tm-tag mini-profile user-mini-profile">
+            <div class="">
+               {{#link-to 'user' currentUser._id.$oid}}
+                  <img class="profile-image"
+                  {{bindAttr src="controllers.application.profileImgUrl"}} width=50; height=50;>
+                  <h4 class="name use-blue">{{currentUser.name}}</h4>
+               {{/link-to}}
+            </div>
+            <div class="profile-stats">
+               <ul class="stats">
+                  <li class="use-blue">{{currentUser.reputation}} <i class="icon-star"></i></li>
+                  <!--   <a class="span4" href="#">32 Tags</a>-->
+                  <li class="use-blue">{{currTags.length}} Tags</li>
+                  <li class="use-blue">{{currentUser.frequency}} Taggers</li>
+               </ul>
+            </div>
+         </div>
+         <div class="divider-horizontal"></div>
+         <div class="recommended-tags">
+            <h4>Recommended Tags</h4>
+         </div>
+      </div>
+      <div class="span7" id="midCol">
+         <div id="alert" class="alert">
+            <button type="button" class="close" data-dismiss="alert">&times;</button>
+            <h4></h4>
+         </div>
+
+         <h3>Post</h3>
+         {{view Flotag.PostPostView}}
+      	<button href="#myModal" role="button" data-toggle="modal" class="btn btn-large btn-primary pull-right">Create Tag!</button>
+
+         <div class="control-group tm-group"></div>
+         <div class="post-container">
+            <h3 class="flo-head">Feed</h3>
+            </br> 
+            {{view Flotag.CurrentTagView}}
+            <div class="divider-horizontal"></div>
+            <div class="btn-group pull-left" data-toggle="buttons-radio">
+               <button {{action "sort" "erank" target="posts"}} type="button" class="btn btn-primary active">Top</button>
+               <button {{action "sort" "new" target="posts"}} type="button" class="btn btn-primary">New</button>
+            </div>
+            <div class="align-right">
+               <button type="button" class="btn">
+               <i class="icon-double-angle-down"></i>
+               </button>
+            </div>
+         </div>
+        
+
+         {{view Flotag.PostsView}}
+         
+         {{view Flotag.CreateTagView}}
+         {{view Flotag.ChangePassView}}
+         {{view Flotag.EditProfileView}}
+         <!-- <div class="span3"></div> -->
+      </div>
+      <div class="span2">
+      </div>
+   </div>
+
+</div>
+</script>
+
+<script type="text/x-handlebars" data-template-name="posts-view">
+         <div class="post-feed">
+            {{#each posts}}
+                 {{view Flotag.PostView}}
+            {{/each}}
+          {{view Flotag.LoadMoreView}}
+         </div>
+</script>
+
+<script type="text/x-handlebars" data-template-name="search-view">
+        <form class="form-search pull-right">
+         <div class="input-append">
+            <input id="search-input" type="text" class="span2 search-query" name="typeahead-search-input" placeholder="Search">
+            <button type="submit" class="btn">
+            <i class="icon-search"></i>
+            </button>
+         </div>
+      </form>
+</script>
+
+<script type="text/x-handlebars" data-template-name="current-tag-view">
+  <span id="currentTagCont"></span>
+            <input type="text" id="current-tags" name="typeahead-current-tags"
+               placeholder="Tags"
+               class="tm-input tm-input-success  typeahead-current-tags" /> 
+               <br>
+</script>
+
+<script type="text/x-handlebars" data-template-name="post-post-view">
+           <form class="form-actions">
+            <textarea id="postTextArea" class="input-block-level span12"
+               placeholder="Write a Post"></textarea>
+            </br>
+            <span id="postTagCont"></span>
+             <input id="post-tags" type="text" name="typeahead-post-tags"
+               placeholder="Tags (Max 1 per post)"
+               class="tm-input tm-input-success  typeahead-post-tags" />
+            <button {{action "post" this target="posts"}} type="button" class="btn btn-primary pull-right"
+            id="postBtn">Post!</button>
+         </form>
+</script>
+
+
+
+<script type="text/x-handlebars" data-template-name="user">
+
+<div class="fixed-nav-page">
+{{partial "_nav_bar"}}
+<div class="container-fluid">
+   <div class="row-fluid">
+      <div class="span2 myspan" id="leftCol">
+
+
+         <!-- <div class="divider-horizontal"></div> -->
+
+
+      </div>
+      <div class="span7" id="midCol">
+				<div class="tm-tag mini-profile user-mini-profile">
+					<div class="profile-summary">
+						<a href="#"> <img class="profile-image pull-left"
+							{{bindAttr src="userProfileImage" }} width="150" height="150"></a>
+							<div class="user-data align-right">
+								<h2 class="use-blue">{{name}}</h2>
+						<h3 class="use-blue ">{{username}}</h3>
+						<h4 class="use-blue ">{{about}}</h4>
+
+            {{#unless isCurrentUser}}
+              {{#if userTagged}}
+                  <span class="tag-btn btn tm-tag tm-tag-info">Tagged</span><br/>
+
+                  <button {{action "untagUser"}} class="tag-btn btn tm-tag tm-tag-small tm-tag-inverse untag">Untag</button>
+
+              {{else}}
+                  <button {{action "tagUser"}} class="tag-btn btn tm-tag tm-tag-warning">Tag'em!</button>
+
+              {{/if}}
+            {{/unless}}
+						<ul class="userpage-stats">
+							<li class="use-blue"><a href="#">{{reputation}} <i class="icon-star"></i></a></li>
+							<!--   <a class="span4" href="#">32 Tags</a>-->
+							<li class="use-blue"><a href="#">{{default_tags.length}} Tags</a></li>
+							<li class="use-blue"><a href="#">{{frequency}} Tagged</a></li>
+						</ul>
+					</div>
+				</div>
+				</div>
+				<h3 class="flo-head">{{name}}'s Tags</h3>
+				<br/> 
+				{{#with currentUser as currentUser}} 
+				{{#each userCurrTags}}
+            {{tag-comp user=currentUser tag = this }}
+
+				{{/each}}
+				{{/with}}
+
+
+				<br/>
+        <div class="divider-horizontal"></div>
+           <form class="form-actions">
+            <textarea id="postTextArea" class="input-block-level span12"
+               placeholder="Write a Post"></textarea>
+            </br>
+            <span id="postTagCont">
+                      <span class="tm-tag tm-tag-info">{{name}}</span>
+
+            </span>
+
+            <button {{action "post" this}} type="button" class="btn btn-primary pull-right"
+            id="postBtn">Post!</button>
+         </form>
+
+				<div class="divider-horizontal"></div>
+        {{#with controllers.posts}}
+        {{#each this}}
+            {{view Flotag.PostView}}
+
+        {{/each}}
+         {{view Flotag.LoadMoreView}}
+
+        {{/with}}
+         {{view Flotag.CreateTagView}}
+         {{view Flotag.ChangePassView}}
+         {{view Flotag.EditProfileView}}
+	  </div>
+      <div class="span2">
+      </div>
+   </div>
+
+</div>
+</div>
+</script>
+
+<script type='text/x-handlebars' data-template-name="replying-view">
+
+				<div class="form-actions" style="margin-left: 20px;">
+
+				{{textarea class="span" valueBinding="replyText" style="resize: vertical; "}}
+            	<div class="pull-right">
+				  <button {{action "reply"}} type="submit" class="btn btn-primary"><i class="icon-reply"></i>Reply</button>
+				  <button {{action "toggleReplying"}}  type="button" class="btn">Cancel</button>
+				  </div>
+				</div>
+</script>
+
+<script type='text/x-handlebars' data-template-name="load-more-view">
+
+    
+    <img id="ajax-loader" width="50" src="/images/ajax-loader.gif" >
+
+
+
+{{#if canLoadMore}}
+    <a class="load-more btn"{{action "loadMorePosts" target="controller.controllers.posts" }}>Load More Posts</a>
+{{else}}
+    <i>no more items</i>
+{{/if}}
+</script>
+
+<script type="text/x-handlebars" data-template-name="post-view">
+<div class="post">
+   <p>{{{linkify content.content}}}</p>
+               {{#unless previewHidden}}
+               {{#if isImageLink}}    
+               <img {{bindAttr src="image"}}>
+               {{/if}}
+               {{#if isVideoLink}}
+               {{{computedEmbed}}}
+               {{/if}}
+               {{/unless}}
+            
+               <div class="post-tags align-right">
+                  {{#with currentUser as currentUser}}
+                  {{#with user as user}}
+                    {{#each tags}}
+
+                      {{#isnt tag.$oid user.$oid}}
+                      {{tag-comp tag=this user=currentUser}}
+                      {{/isnt}}
+                    {{/each}}
+                  {{/with}}
+                  {{/with}}
+                  {{#link-to "user" user._id.$oid}}
+
+                  <div class="tm-tag tm-tag-info post-user" ><img  {{bindAttr src="userProfileImage" }}>{{user.username}}
+                  </div>
+                  {{/link-to}}
+               </div>
+               <div class="btn-group post-btn-group">
+                  <a {{action "upvote" this }} type="button" {{bind-attr class=":btn upvoted"}} ><i class="icon-chevron-up"></i></a>
+                  <a type="button" class="btn btn">{{sub upvotes downvotes}}</a>
+                  <a {{action "downvote" this }} type="button" {{bind-attr class=":btn downvoted"}}><i class="icon-chevron-down"></i></a>
+                  <a {{action "toggleReplying" this}} type="button" class="btn btn"><i class="icon-reply"></i>Reply</a>
+                  <a {{action "toggleReplies" this}} type="button" class="btn"><i {{bind-attr class="repliesHidden:icon-double-angle-down:icon-double-angle-up"}}></i></a>
+                  <!--              <button type="button" class="btn"><i class="icon-film icon-large use-blue"> Play Video +</i></button>           
+                     -->        
+                  {{#if previewHidden}}
+                  {{#if isImageLink}}   
+                  <button {{action "preview" this }} type="button" class="btn"><i class="icon-picture icon-large use-blue"> Show Image +</i>                  </button>
+                  {{/if}}
+                  {{#if isVideoLink}}   
+                  <button {{action "preview" this}} type="button" class="btn"><i class="icon-film icon-large use-blue"> Show Video +</i></button>
+                  {{/if}}
+                  {{else}}
+                  {{#if isImageLink}}   
+                  <button {{action "preview" this}} type="button" class="btn"><i class="icon-picture icon-large use-blue"> Hide Image +</i>                 </button>
+                  {{/if}}
+                  {{#if isVideoLink}}   
+                  <button {{action "preview" this}} type="button" class="btn"><i class="icon-film icon-large use-blue"> Hide Video +</i></button>
+                  {{/if}}
+                  {{/if}}
+
+               </div>
+                <span class="date">{{timeago datePosted}}</span>
+
+            {{#if isReplying}}
+              {{view Flotag.ReplyingView}}
+      {{/if}}                         
+            
+            {{#unless repliesHidden}}
+              {{#if repliesLoaded}}
+               <div class="replies">
+                  {{render "treeBranch" replyTree }}
+                  </div>
+              {{/if}}
+              
+            {{/unless}}
+</div>
+</script>
+
+<script data-template-name="tree-branch" type="text/x-handlebars">
+    {{#each children itemController="treeNode"}}
+    	{{view Flotag.TreeNodeView}}
+    {{/each}}
+
+</script>
+
+<script data-template-name="tree-node" type="text/x-handlebars">
+<div class="reply">
+         <div class="divider-horizontal"></div>
+
+  {{#if username}}
+  {{#link-to "user" user.$oid}}<span class=" btn tm-tag tm-tag-info tm-tag-small">{{username}}</span>{{/link-to}}
+  {{/if}}
+  <p>{{{linkify content.content}}}</p>
+
+
+ <div class="btn-group post-btn-group">
+  <a {{action "upvote" user post node }} type="button" {{bind-attr class=":btn upvoted:upvoted"}} ><i class="icon-chevron-up"></i></a>
+  <a type="button" class="btn btn">{{sub upvotes downvotes}}</a>
+  <a {{action "downvote" user post node }} type="button" {{bind-attr class=":btn downvoted:downvoted"}}><i class="icon-chevron-down"></i></a>
+  <a {{action "toggleReplying" this}} type="button" class="btn btn"><i class="icon-reply"></i>Reply</a>
+  <a {{action toggle}} type="button" {{bindAttr class=":toggle-icon :btn children.length::leaf"}}><i {{bind-attr class="isExpanded:icon-double-angle-up:icon-double-angle-down"}}></i></a>
+  <span>
+    {{#if isExpanded}}
+      &#x25BC;
+    {{else}}
+      &#x25B6;
+    {{/if}}
+  </span>
+
+  </div>
+    <span class="date">{{timeago datePosted}}</span>
+
+
+
+  {{#if isReplying}}
+
+				{{view Flotag.ReplyingView}}
+  {{/if}}
+  {{#if isExpanded}}
+    {{render "treeBranch" content}}
+  {{/if}}
+  </div>		
+
+</script>
+
+<!-- <script type="text/x-handlebars" data-template-name="reply-view">
+
+</script> -->
+
+<script type="text/x-handlebars" data-template-name="create-tag-view">
+	<div id="myModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+    <h3 id="myModalLabel" class="tm-tag tm-tag-success tm-tag-large">{{view.tagInput}}</h3>
+	<p>{{view.tagAboutInput}}</p>
+  </div>
+  <div class="modal-body">
+          <div id="modal-alert" class="alert hidden">
+                <button type="button" class="close" data-dismiss="alert">&times;</button>
+                <h4>Incorrect Login info.</h4> 
+                
+            </div>
+
+			<div class="fileupload fileupload-new pull-right" style="padding-right:20px;" data-provides="fileupload">
+			<label>Tag Image</label>
+			  <div class="fileupload-new thumbnail" style="width: 200px; height: 150px;"><img  src="/images/image-place.gif" /></div>
+			  <div class="fileupload-preview fileupload-exists thumbnail" style="max-width: 200px; max-height: 150px; line-height: 20px;"></div>
+			  <div>
+			    <span class="btn btn-file"><span class="fileupload-new">Select image</span><span class="fileupload-exists">Change</span><input  type="file" /></span>
+			    <a href="#" class="btn fileupload-exists" data-dismiss="fileupload">Remove</a>
+			  </div>
+			</div>			
+			  <div class="control-group">
+			    <label class="control-label" for="inputName">Name</label>
+			    <div class="controls">
+			    {{input id="inputName" maxlength="25" type="text" class="form-control" rel="popover" data-content="Enter name for tag." valueBinding="view.tagInput" }}
+				 
+			    </div>
+			  </div>
+			  <div class="control-group">
+			    <label class="control-label" for="inputUsername">Description</label>
+			    <div class="controls">
+			    	{{textarea maxlength="200" class="form-control" valueBinding="view.tagAboutInput"}}
+			    </div>
+			  </div>
+
+    
+  </div>
+  <div class="modal-footer">
+    <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+    <button {{action "saveTag" target="view"}} class="btn btn-primary">Save changes</button>
+  </div>
+</div>
+</script>
+
+<script type="text/x-handlebars" data-template-name="change-pass-view">
+  <div id="changePassModal"  class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="changePassModalLabel" aria-hidden="true">
+  <div class="modal-header">
+    <h3>Change Password</h3>
+  </div>
+  <div class="modal-body">
+          <div id="pw-modal-alert" class="alert hidden">
+                <button type="button" class="close" data-dismiss="alert">&times;</button>
+                 <h4></h4> 
+                
+            </div>
+        <div class="control-group">
+          <label class="control-label" for="inputOldPass">Old Password</label>
+          <div class="controls">
+          {{input id="inputOldPass" maxlength="40" type="password" class="form-control" rel="popover" valueBinding="view.oldPass" }}
+         
+          </div>
+        </div>
+        <div class="control-group">
+          <label class="control-label" for="inputNewPass">New Password</label>
+          <div class="controls">
+            {{input id="inputNewPass" maxlength="40" type="password" class="form-control" valueBinding="view.newPass"}}
+          </div>
+        </div>
+        <div class="control-group">
+          <label class="control-label" for="inputNewPassConf">Confirm New Password</label>
+          <div class="controls">
+            {{input id="inputNewPassConf" maxlength="40" type="password" class="form-control" valueBinding="view.newPassConf"}}
+          </div>
+        </div>
+
+    
+  </div>
+  <div class="modal-footer">
+    <button class="btn" data-dismiss="modal" data-target="#changePassModal" aria-hidden="true">Close</button>
+    <button {{action "savePassword" target="view"}} class="btn btn-primary">Save New Password</button>
+  </div>
+</div>
+</script>
+
+<script type="text/x-handlebars" data-template-name="edit-profile-view">
+  <div id="editModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="editModalLabel" aria-hidden="true">
+  <div class="modal-header">
+    <button type="button" {{action "hideEditView" target="view"}} class="close" data-dismiss="modal" aria-hidden="true">×</button>
+    <h3 id="editModalLabel" class="tm-tag tm-tag-info tm-tag-large">{{view.editNameInput}}</h3>
+    <p>{{view.editAboutInput}}</p>
+  </div>
+  <div class="modal-body">
+     <div id="edit-modal-alert" class="alert hidden">
+                <button type="button" class="close" data-dismiss="alert">&times;</button>
+                <h4></h4> 
+                
+      </div>
+
+      <div class="fileupload fileupload-new pull-right" style="padding-right:20px;" data-provides="fileupload">
+      <label>Change Image</label>
+        <div class="fileupload-new thumbnail" style="width: 200px; height: 150px;"><img {{bindAttr src="controllers.application.profileImgUrl"}} /></div>
+        <div class="fileupload-preview fileupload-exists thumbnail" style="max-width: 200px; max-height: 150px; line-height: 20px;"></div>
+        <div>
+          <span class="btn btn-file"><span class="fileupload-new">Select image</span><span class="fileupload-exists">Change</span><input  type="file" /></span>
+          <a id="editImgRemove" href="#" class="btn fileupload-exists" data-dismiss="fileupload">Remove</a>
+        </div>
+      </div>      
+        <div class="control-group">
+          <label class="control-label" for="inputName">Name</label>
+          <div class="controls">
+          {{input id="editNameInput" maxlength="25" type="text" class="form-control" rel="popover" valueBinding="view.editNameInput" }}
+         
+          </div>
+        </div>
+        <div class="control-group">
+          <label class="control-label" for="inputAbout">About</label>
+          <div class="controls">
+            {{textarea id="editAboutInput" maxlength="200" class="form-control" valueBinding="view.editAboutInput"}}
+          </div>
+        </div>
+
+    
+  </div>
+  <div class="modal-footer">
+    <button {{action "hideEditView" target="view"}} class="btn" data-dismiss="modal" data-target="#editModal" aria-hidden="true">Close</button>
+    <button {{action "saveChanges" target="view"}} class="btn btn-primary">Save Changes</button>
+  </div>
+</div>
+</script>
+
+<script type="text/x-handlebars" data-template-name="notification-view">
+<div class="arrow-up"></div>
+
+<div id="notifications">
+	{{#each notifications}}
+  {{#link-to "user" user.$oid}}
+
+	<div class="notification">
+		<img  {{bindAttr src="userProfileImage"}} class="pull-left not-img">
+
+		<p>{{message}}</p>
+	</div>
+  {{/link-to}}
+
+	{{/each}}
+</div>
+</script>
+
+<script type="text/x-handlebars" data-template-name='_nav_bar'>
+<div class="navbar navbar-fixed-top">
+   <div class="navbar-inner ">
+      <a class="brand " href="#"><img class="logo"
+         src="/images/flotag_dark.png"></a>
+      <ul class="nav pull-right">
+         <li class="">{{#link-to 'index'}}Home{{/link-to}}</li>
+         <li class="divider-vertical"></li>
+         <li>{{#link-to 'user' currentUser._id.$oid}}Profile{{/link-to}}</li>
+         <li class="divider-vertical"></li>
+         <li class="dropdown">
+            <a class="dropdown-toggle"
+               data-toggle="dropdown" href="#"> <i class="icon-cogs"></i>
+            </a>
+            <ul class="dropdown-menu">
+            	<li><a data-toggle="modal" data-target="#changePassModal" href="#">Change Password</a></li>
+               <li><a {{action "toggleEditView" target="base"}} data-toggle="modal" data-target="#editModal" href="#" href="#">Edit Profile</a></li>
+               <li><a href="/#/logout">Logout</a></li>
+            </ul>
+         </li>
+      </ul>
+      {{view Flotag.SearchView}}
+      <div id="not-container" class="pull-right" style="position:relative">
+      <a {{action toggleProperty "showNotifications"}} id="not-globe"   href="#"><i
+         class="icon-globe icon-large"></i>         
+         </a>
+         {{#if showNotifications}}
+         {{view Flotag.NotificationView}}
+         {{/if}}
+      </div>
+
+   </div>
+</div>
+</script>
+
+<script type="text/x-handlebars" id="components/hover-tag">
+         <div class="tm-tag mini-profile user-mini-profile">
+            <a {{bindAttr href="url"}}>
+
+            <div>
+               
+                  <img class="profile-image"
+                  {{bindAttr src="imgUrl"}} width=50; height=50;>
+                  <h4 class="name use-blue">{{tag.name}}</h4>
+               
+            </div>
+            </a>
+            <div class="profile-stats">
+               <ul class="stats">
+                  <!--   <a class="span4" href="#">32 Tags</a>-->
+                  <li class="use-blue">{{tag.frequency}} Taggers</li>
+               </ul>
+            </div>
+         </div>
+
+</script>
+
+<script type="text/x-handlebars" id="components/tag-comp">
+  {{tag.name}}
+
+</script>
+
+</body>
+
+
+</html>

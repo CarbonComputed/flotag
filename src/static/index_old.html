@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Flotag</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="css/bootstrap-responsive.css" rel="stylesheet">
+<link rel="stylesheet" href="css/normalize.css">
+<link href="css/bootstrap_cosmo.css" rel="stylesheet" media="screen">
+<link rel="stylesheet" href="css/font-awesome.min.css">
+<link rel="stylesheet" type="text/css"
+	href="css/bootstrap-tagmanager.css">
+<link rel="stylesheet" type="text/css"
+	href="css/typeahead.js-bootstrap.css">
+
+<link rel="stylesheet" type="text/css" href="css/style.css">
+<script src="js/libs/jquery-1.9.1.js"></script>
+<script src="js/libs/handlebars-1.0.0-rc.4.js"></script>
+<script src="js/libs/jquery.color-2.1.2.min.js"></script>
+
+<script src="js/libs/bootstrap.js"></script>
+<script src="js/libs/bootstrap-tagmanager.js"></script>
+
+
+
+<script src="js/app.js"></script>
+</head>
+
+<body>
+	<div class="navbar navbar-fixed-top">
+		<div class="navbar-inner ">
+			<a class="brand " href="#"><img class="logo"
+				src="/static/images/flotagv8_bold1.png"></a>
+
+			<ul class="nav pull-right">
+				<li class="active"><a href="#">Home</a></li>
+				<li class="divider-vertical"></li>
+				<li><a href="#">Profile</a></li>
+				<li class="divider-vertical"></li>
+				<li class="dropdown"><a class="dropdown-toggle"
+					data-toggle="dropdown" href="#"> <i class="icon-cogs"></i>
+				</a>
+					<ul class="dropdown-menu">
+						<li><a href="#">Edit Profile</a></li>
+						<li><a href="#">Logout</a></li>
+					</ul></li>
+			</ul>
+			<form class="form-search pull-right">
+				<div class="input-append">
+					<input type="text" class="span2 search-query" placeholder="Search">
+
+					<button type="submit" class="btn">
+						<i class="icon-search"></i>
+					</button>
+				</div>
+			</form>
+			<a id="not-globe" class="pull-right" href="#"><i
+				class="icon-globe icon-large"></i></a>
+
+		</div>
+	</div>
+	<div class="container-fluid">
+		<div class="row-fluid">
+			<div class="span2 myspan" id="leftCol">
+				<div class="tm-tag mini-profile user-mini-profile">
+					<div class="">
+						<a href="#"><img class="profile-image"
+							src="/static/images/dev/profile-pic.jpg" width=50; height=50;>
+						<h4 class="name use-blue">Kevin Carbone</h4></a>
+					</div>
+					<div class="profile-stats">
+						<ul class="stats">
+							<li class="use-blue"><a href="#">16 <i class="icon-star"></i></a></li>
+							<!--   <a class="span4" href="#">32 Tags</a>-->
+							<li class="use-blue"><a href="#">6 Tagged</a></li>
+							<li class="use-blue"><a href="#">4 Taggers</a></li>
+						</ul>
+					</div>
+				</div>
+				<div class="divider-horizontal"></div>
+				<div class="recommended-tags">
+					<h4>Recommended Tags</h4>
+				</div>
+			</div>
+			<div class="span7" id="midCol">
+				<h3>Post</h3>
+
+
+				<form class="form-actions">
+
+					<textarea id="postTextArea" class="input-block-level span12"
+						placeholder="Write a Post"></textarea>
+					</br> <input id="post-tagger" type="text" name="typeahead-post-tags"
+						 placeholder="Tags (Max 1 per post)"
+						class="tm-input tm-input-success  typeahead-post-tags" />
+
+					<button type="button" class="btn btn-primary pull-right"
+						id="postBtn">Post!</button>
+				</form>
+
+				<div class="control-group tm-group"></div>
+				<div class="post-container">
+					<h3 class="flo-head">Feed</h3>
+					</br> <input type="text" id="current-tags" name="typeahead-current-tags"
+						placeholder="Tags"
+						class="tm-input tm-input-success  typeahead-current-tags" /> <br>
+					<div class="divider-horizontal"></div>
+
+					<div class="btn-group pull-left" data-toggle="buttons-radio">
+						<button type="button" class="btn btn-primary active">Top</button>
+						<button type="button" class="btn btn-primary">New</button>
+					</div>
+					<div class="align-right">
+
+						<button type="button" class="btn">
+							<i class="icon-double-angle-down"></i>
+						</button>
+					</div>
+
+
+				</div>
+				<!--    <div class="tm-tag tm-tag-info"><img src="/static/images/logo.png" width=35 height=35 class="img-rounded"><a  href="#">Kevin Carbone</a></div>
+
+      <p>My Message</p>
+      -->
+			<div class="post-feed">
+				<div class="post">
+				
+						<p>This is a post. I'm posting on flotag.com! This is an awesome post!This is a post. I'm posting on flotag.com! otag.com! This is an awesome post!This is a post. I'm posting on flotag.com! This is an awesome post!This is a post.</p>
+						<!-- <a href="#"><i class="icon-youtube-play icon-large">Play Video</i></a> -->
+ <!-- <embed src="http://www.youtube.com/embed/Ga99hMi7wfY?feature=oembed" frameborder="0" allowfullscreen></embed>  -->
+				 <img src="http://i.imgur.com/BYp7B4g.jpg">
+ 							<div class="post-tags align-right">
+							<div class="tm-tag tm-tag-success" >rugby</a></div>
+												<div class="tm-tag tm-tag-info post-user" ><img  src="/static/images/dev/profile-pic.jpg" width=25 height=25><a href="#">Kevin Carbone</a></div>
+
+						</div>
+						
+						<div class="btn-group post-btn-group">
+							<button type="button" class="btn btn"><i class="icon-chevron-up"></i></button>
+							<button type="button" class="btn btn"><i class="icon-chevron-down"></i></button>
+							<button type="button" class="btn btn"><i class="icon-reply"></i>Reply</button>
+							<button type="button" class="btn"><i class="icon-double-angle-down"></i></button>
+<!-- 							<button type="button" class="btn"><i class="icon-film icon-large use-blue"> Play Video +</i></button>
+ -->							<button type="button" class="btn"><i class="icon-picture icon-large use-blue"> Show Image +</i></button>
+						</div>
+
+				</div>
+
+			</div>
+
+			</div>
+			<div class="span3"></div>
+		</div>
+	</div>
+
+
+	<!-- <script type="text/javascript" data-template-name="_new-post">
+  <div id="newPostModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="newPostModalLabel" aria-hidden="true">
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+    <h3 id="newPostModalLabel">New Post</h3>
+  </div>
+  <div class="modal-body">
+    <textarea class="input-block-level"></textarea>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+    <button class="btn btn-primary">Post</button>
+  </div>
+</div>
+
+</script> -->
+
+
+
+
+</body>
+</html>

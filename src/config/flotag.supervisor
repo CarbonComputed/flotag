@@ -1,0 +1,11 @@
+# -*- conf -*-
+
+[program:flotag]
+process_name = flotag-%(process_num)s
+command =python /home/ubuntu/production/current/Flotag/src/app.py --port=%(process_num)s
+	
+# Increase numprocs to run multiple processes on different ports.
+# Note that the chat demo won't actually work in that configuration
+# because it assumes all listeners are in one process.
+numprocs = 1
+numprocs_start = 8000

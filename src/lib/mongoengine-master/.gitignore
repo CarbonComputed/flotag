@@ -1,0 +1,17 @@
+.*
+!.gitignore
+*~
+*.py[co]
+.*.sw[po]
+*.egg
+docs/.build
+docs/_build
+build/
+dist/
+mongoengine.egg-info/
+env/
+.settings
+.project
+.pydevproject
+tests/test_bugfix.py
+htmlcov/
