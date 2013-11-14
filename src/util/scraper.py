@@ -228,6 +228,7 @@ class Scraper:
                 if self.soup.title:
                     link_data['title'] = self.soup.title.string
             og_description = self.soup.find('meta', property='og:description')
+            print og_description
             if og_description and og_description['content']:
                 link_data['description'] = og_description['content']
         link_data['content-type'] = self.content_type
@@ -478,7 +479,12 @@ class VimeoScraper(MediaScraper):
             self.download()
 
         if self.soup:
-            video_url =  self.soup.find('link', rel = 'video_src')['href']
+            f = self.soup.find('link', rel = 'video_src')
+            if f:
+                video_url =  f['href']
+            else:
+                video_url=None
+
             return dict(video_id = video_url,
                         type = self.domains[0])
 
@@ -1928,7 +1934,10 @@ def get_link(url,callback = None):
     
     data = h.link_data()
     mo = h.media_object()
-    me = get_media_embed(mo)
+    if mo and mo.get('video_id',None):
+        me = get_media_embed(mo)
+    else:
+        me = None
     mec = None
     if me != None:
         mec = me.content

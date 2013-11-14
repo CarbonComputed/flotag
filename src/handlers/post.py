@@ -2,6 +2,7 @@ from handlers.base import RestHandler
 from models.response import ResponseModel
 from models.post import *
 from models.tag import *
+from models.user import *
 from handlers.user import *
 from util.MongoEncoder import *
 
@@ -152,7 +153,9 @@ class PostActions:
             post.user = user
             post.rank = util.ranking.hot(1,0,post.date_created)
             tags = Tag.objects(id__in=tags)
-            tag = EmbeddedTag(name=tags.first().name,tag=tags.first())
+            tag = EmbeddedTag(name=tags.first().name,tag=tags.first(),is_user=isinstance(tags.first(), User))
+            #check if user and notify
+            #support for more than one tags
             utag = EmbeddedTag(name=user.name,tag=user,is_user=True) 
             post.tags.append(tag)
             post.tags.append(utag)

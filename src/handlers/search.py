@@ -44,7 +44,9 @@ class SearchActions:
     
     @staticmethod
     def search(query,callback=None):
-        results = User.objects(Q(name__istartswith=query) |  Q(username__istartswith=query)).only("_id","name","username","about")
+        results = {}
+        results['users'] = User.objects(Q(name__istartswith=query) |  Q(username__istartswith=query)).only("_id","name","username","about")
+        results['tags'] = Tag.objects(Q(name__istartswith=query)).no_sub_classes().only("_id","name","about")
         if callback != None:
             return callback(results)
         return results

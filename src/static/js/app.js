@@ -63,6 +63,8 @@ Flotag.Router.map(function() {
 	this.resource('login');
 	this.resource('index',{path:"/"});
 	this.resource('user',{path:"/user/:user_id"});
+	this.resource('tag',{path:"/tag/:tag_id"});
+
 	this.resource('verify',{path:"/verify/:reg_id"});
 	this.resource('logout');
 
@@ -102,7 +104,12 @@ Flotag.LogoutRoute = Ember.Route.extend({
 	}
 });
 Flotag.AuthenticatedRoute = Ember.Route.extend({
-	
+
+    enter: function(router) {
+    	this._super(router);
+        window.scrollTo(0,0);
+    },
+
 	beforeModel: function(transition){
 		if(this.controllerFor('login').get('loggedIn') == "false" || !this.controllerFor('login').get('loggedIn')){
 			this.redirectToLogin(transition);
@@ -188,14 +195,52 @@ Flotag.UserRoute = Flotag.BaseRoute.extend({
 
 	setupController: function(controller, uid){
 		var self = this;
-		var tempmodel = Flotag.User.create({});
-		controller.set('content',tempmodel);
+		var _id = {"$oid":uid};
+		var tempmodel = Flotag.User.create({"_id": _id});
+		
+		controller.set('model',tempmodel);
 		this._super(controller,tempmodel);
 
 		Flotag.User.find(uid).then(null,function(model){
 			controller.set('model',model);
+			controller.set("_id.$oid",model._id.$oid);
 			controller.set("userCurrTags",Flotag.User.getUserTags(model._id.$oid));
-			self.controllerFor('posts').set("feedTags",[model.get('userTag')]);
+			self.controllerFor('posts').set("feedTags",[model.get('_id')]);
+			Flotag.Post.getFeed("erank",1,JSON.stringify([model.get('_id')])).then(null,function(feed){
+				self.controllerFor('posts').set('model',feed);
+			});
+		});
+		
+
+		
+
+		this.controllerFor('posts').set('page',1);
+		this.controllerFor('posts').set('sort',"erank");
+		this.controllerFor('posts').set('canLoadMore', true);
+
+
+	}
+
+});
+
+Flotag.TagRoute = Flotag.BaseRoute.extend({
+
+
+
+	model: function(params) {
+
+		return params.tag_id;
+	},
+
+	setupController: function(controller, tid){
+		var self = this;
+		var tempmodel = Flotag.Tag.create({});
+		controller.set('content',tempmodel);
+		this._super(controller,tempmodel);
+
+		Flotag.Tag.find(tid).then(null,function(model){
+			controller.set('model',model);
+			self.controllerFor('posts').set("feedTags",[model.get('_id')]);
 			Flotag.Post.getFeed("erank",1,JSON.stringify([model.get('_id')])).then(null,function(feed){
 				self.controllerFor('posts').set('model',feed);
 			});
@@ -275,6 +320,10 @@ Flotag.ApplicationController = Ember.Controller.extend({
 		}
 		return "/api/profile/"+this.get("currentUser")._id.$oid.toString()+"?_="+'?'+Math.random();
 	}.property("currentUser"),
+
+  	jqueryInit: function(){
+
+  	},
 });
 
 Flotag.User = Em.Object.extend({
@@ -293,11 +342,11 @@ Flotag.User = Em.Object.extend({
 		//debugger;
 	//
 		if(!this.get('_id') || !this.get('_id').$oid){
+			
 			return "";
 		}
-		
 		return "/api/profile/"+ this.get('_id').$oid;
-    }.property('user.$oid'),
+    }.property("_id"),
 
     userTag: function(){
     	if(!this.get('_id') || !this.get('_id').$oid){
@@ -316,6 +365,15 @@ Flotag.Notification = Em.Object.extend({
 
 Flotag.Tag = Em.Object.extend({
 
+	tagProfileImage: function() {
+		//debugger;
+	//
+		if(!this.get('_id') || !this.get('_id').$oid){
+			return "";
+		}
+		
+		return "/api/profile/"+ this.get('_id').$oid;
+    }.property('_id.$oid'),
 
 });
 
@@ -335,8 +393,11 @@ Flotag.Tag.reopenClass({
 			//contentType : "application/json"
 		}).then(null,function(data){
 				data = JSON.parse(data.responseText);
-				data.models.tags.name = data.models.tags.name.capitalize();
-				tag.setProperties(data.models.tags);
+				if(data.models.tags && data.models.tags.name){
+					data.models.tags.name = data.models.tags.name.capitalize();
+				}
+					tag.setProperties(data.models.tags);			
+
 				return tag;
 		});
 	},
@@ -448,6 +509,7 @@ Flotag.Post = Em.Object.extend({
 
 Flotag.Post.reopen({
 
+	previewLoading: false,
 
 	isLink: false,
 
@@ -482,13 +544,20 @@ Flotag.Post.reopen({
 
 	   var value = this.get('content');
 	  var escaped = Handlebars.Utils.escapeExpression(value);
-	  var expression = /[-a-zA-Z0-9@:%_\+.~#?&//=]{2,256}\.[a-z]{2,4}\b(\/[-a-zA-Z0-9@:%_\+.~#?&//=]*)?/gi;
+	  var expression = /[-a-zA-Z0-9@:%_\+.~#?&//=]{2,256}\.[a-z]{2,4}\b(\/[-a-zA-Z0-9@:%_\+.~#?&//=]*)?/i;
 	  var regex = new RegExp(expression);
 	  var link = value.match(regex);
 	  this.set('isLink',link);
+	  this.set("link",link);
 	  var that = this;
 
+
 	  if(link){
+	  var link = link[0];
+	  value = value.replace(expression,"");
+	  this.set('content',value);
+
+	  this.set('previewLoading',true);
 		$.ajax({
 			type: "GET",
 			url : "/api/media?url="+link,
@@ -507,6 +576,11 @@ Flotag.Post.reopen({
 
 
 				}
+				data.link = link;
+
+				that.set("data",data);
+					  that.set('previewLoading',false);
+
 				//that.get('view').set('image',data.image);
 				
 			},
@@ -886,7 +960,8 @@ Flotag.UserView = Ember.View.extend({
 	didInsertElement: function(){
 		this.get('controller').send('documentReady');
 
-	}
+	},
+
 });
 
 Flotag.PostsView = Ember.View.extend({
@@ -930,7 +1005,9 @@ Flotag.SearchView = Em.View.extend({
   		Ember.run.next(function(){
   			//
 
-	            	$("#search-input:not(.applied)").addClass('applied').typeahead({
+	            	$("#search-input:not(.applied)").addClass('applied').typeahead([
+	            		{
+	            			  name: "users",
 						      valueKey: "name",
 						      local: [],
 
@@ -938,7 +1015,7 @@ Flotag.SearchView = Em.View.extend({
 						      	url: '/api/search?q=%QUERY',
 						      	filter : function(parsedResponse){
 						      		//
-						      		return parsedResponse.models.search;
+						      		return parsedResponse.models.search.users;
 						      	}
 						      },
 						      engine: T,
@@ -951,14 +1028,46 @@ Flotag.SearchView = Em.View.extend({
 
 							                                        
 							                             
+							  ].join(''),
+
+								header: '<h5 class="">Users</h5>'
+						    },
+	            		{
+	            			name: "tags",
+						      valueKey: "name",
+						      local: [],
+								header: '<h5 class="">Tags</h5>',
+						       remote: {
+						      	url: '/api/search?q=%QUERY',
+						      	filter : function(parsedResponse){
+						      		//
+						      		return parsedResponse.models.search.tags;
+						      	}
+						      },
+						      engine: T,
+							  template: [  
+							    '<img  class="search-res" style="margin:0;display:inline-block;vertical-align:middle;" src="/api/profile/{{_id.$oid}}" > ', 
+							    '<div style="margin:0;display:inline-block;vertical-align:middle;">'                 ,                                       
+							    '<p class="repo-name">{{name}}</p>',
+							    '</div>'
+
+							                                        
+							                             
 							  ].join('')
 
 
-						    }).on('typeahead:selected', function (e, d) {
+						    },
+						    ]).on('typeahead:selected', function (e, d) {
 						    	
 						 		//that.trigger('tm:popped');
-						 	
-						 		self.get('controller').transitionTo('user', d._id.$oid);
+						 		if(d._cls == "Tag.User"){
+						 			self.get('controller').transitionTo('user', d._id.$oid);
+
+						 		}
+						 		else{
+						 			self.get('controller').transitionTo('tag', d._id.$oid);
+
+						 		}
 						 		$("#search-input").typeahead('setQuery','');
 						 		
 
@@ -1026,6 +1135,16 @@ Flotag.PostPostView = Em.View.extend({
 	}
 });
 
+Flotag.ApplicationView = Em.View.extend({
+	didInsertElement: function ()
+	{
+		this._super();
+		this.get('controller').send('jqueryInit');
+
+	    
+	}
+});
+
 Flotag.CurrentTagView = Em.View.extend({
 	templateName: 'current-tag-view',
 	didInsertElement: function ()
@@ -1069,6 +1188,68 @@ Flotag.CreateTagView = Em.View.extend({
     	this.send('saveTag');
 	}
   }
+  
+
+});
+
+
+
+Flotag.MobileNavView = Em.View.extend({
+  templateName: 'mobile-nav-view',
+
+  didInsertElement: function(){
+  	Em.run.once(function(){
+	  	$( ".mobile-btn" ).click(function(e) {
+	  		if(!$(this).hasClass("active") ) {
+	  			$( ".mobile-btn" ).removeClass("active");
+	  			$(".mobile-btn" ).css("background-color","");	
+	  			$(".drop-bar-item").addClass("hide");
+
+
+
+		  	 	var str = this.id;
+		  	 	if(str.length > 0){
+		  	 		$(this).addClass("active");
+
+		  	 		$("#drop-bar").removeClass("hide");
+
+		  	 		var t = str.split("mobile-btn-")[1].trim();
+		  	 		$.trim(t);
+		  	 		$("#drop-bar-"+t).removeClass("hide");
+		 			$(this).css("background-color","orange");	
+		 			$(".fixed-nav-page").css("margin-top",($("nav").height()+50)+"px");
+
+		  	 	}
+
+
+	 		}
+	 		else{
+		  	 	$("#drop-bar").addClass("hide");
+		  	 	$(this).removeClass("active");
+		  	 	var str = this.id;
+		  	 	if(str.length > 0){
+		  	 		var t = str.split("mobile-btn-")[1].trim();
+		  	 		$.trim(t);
+		  	 		$("#drop-bar-"+t).addClass("hide");
+					$(".fixed-nav-page").css("margin-top","100px");
+		  	 	}
+
+		 		// $("#drop-bar-search").addClass("hide");;
+		 		$(this).css("background-color","");	
+	 		}
+		});
+
+  	});
+
+  }
+  
+
+});
+
+Flotag.PreviewCompComponent = Em.Component.extend({
+  templateName: 'components/preview-comp'
+
+ 
   
 
 });
@@ -1149,10 +1330,12 @@ Flotag.ChangePassView = Em.View.extend({
   		var newPassConf = this.get('newPassConf');
   		var oldPass = this.get('oldPass');
   		if(!newPass || !newPassConf || !oldPass ){
+
   			showAlert($('#pw-modal-alert'),"Missing Data");
   			return;
   		}
   		if(newPass != newPassConf){
+
   			showAlert($('#pw-modal-alert'),"Passwords Dont Match");
   			return;
 
@@ -1273,12 +1456,16 @@ Flotag.HoverTagComponent = Ember.Component.extend({
 
 
 	url: function(){
-		if(this.get("tag")){
+		if(this.get("tag") && this.get("tag").get("_cls") == "Tag.User"){
 			return "/#/user/"+this.get("tag")._id.$oid.toString();
 
 		}
+		else if(this.get("tag") && this.get("tag").get("_cls") != "Tag.User"){
+			return "/#/tag/"+this.get("tag")._id.$oid.toString();
+
+		}
 		else{
-			console.log(this.get('tag'));
+			//console.log(this.get('tag'));
 		}
 	}.property("tag._id.$oid"),
 
@@ -1290,10 +1477,13 @@ Flotag.HoverTagComponent = Ember.Component.extend({
 	}.property('tag._id.$oid')
 });
 
+var tagDict = {};
+var tagCompDict = {};
+
 Flotag.TagCompComponent = Ember.Component.extend({
 	templateName: 'tag-comp',
 	classNames: ['tm-tag','clickable'],
-	classNameBindings: ["is_user:tm-tag-info:tm-tag-success",'untagged:tm-tag-warning'],
+	classNameBindings: ["is_user:tm-tag-info:tm-tag-success",'untagged:tm-tag-warning',"isnt_poster::hidden"],
 	tagName:'span',
 
  
@@ -1307,18 +1497,65 @@ Flotag.TagCompComponent = Ember.Component.extend({
 				tag.tag = tag._id;
 			}
 			if(tag.tag.$oid){
-				Flotag.Tag.find(tag.tag.$oid).then(null,function(tag){
-	    			if(!self.get('isDestroyed')){
-						self.set('tagDetailed',tag);
-					}
+				//We should keep a tag dictionary
+				//console.log(tag.tag.$oid,tagDict);
+				if(tagDict[tag.tag.$oid]){
+							var length = tagCompDict[self.get('tag').tag.$oid].length,
+							    element = null;
 
-				});
+							for (var i = 0; i < length; i++) {
+							  element = tagCompDict[self.get('tag').tag.$oid][i];
+							  element.propertyDidChange('tagDetailed');
+							  // Do something with element i.
+							}
+					//self.set('tagDetailed',tagDict[tag.tag.$oid]);
+				}
+				else{
+					Flotag.Tag.find(tag.tag.$oid).then(null,function(ntag){
+		    			if(!self.get('isDestroyed')){
+							//self.set('tagDetailed',ntag);
+
+							tagDict[self.get('tag').tag.$oid] = ntag;
+							var length = tagCompDict[self.get('tag').tag.$oid].length,
+							    element = null;
+
+							for (var i = 0; i < length; i++) {
+							  element = tagCompDict[self.get('tag').tag.$oid][i];
+							  element.propertyDidChange('tagDetailed');
+							  // Do something with element i.
+							}
+							//console.log(tagDict);
+						}
+
+					});
+				}
+				if(!tagDict[tag.tag.$oid]){
+					tagDict[tag.tag.$oid] = tag;
+
+				}
+				if(!tagCompDict[self.get('tag').tag.$oid]){
+					tagCompDict[self.get('tag').tag.$oid] = [self];
+				}
+				else{
+					tagCompDict[self.get('tag').tag.$oid].push(self);				
+
+				}
+
+
 			}
 		}
 		});
 
 	},
 
+	tagDetailed: function(){
+		var self = this;
+		var tag = self.get('tag');
+		if(!tag.tag){
+			tag.tag = tag._id;
+		}
+		return tagDict[this.get("tag").tag.$oid];
+	}.property(),
 
 
     mouseEnter: function(evt) {
@@ -1330,7 +1567,7 @@ Flotag.TagCompComponent = Ember.Component.extend({
 
 
     			// });
-    			handleTag(self,evt,this.get('tagDetailed'));
+    			//handleTag(self,evt,this.get('tagDetailed'));
 
     		}
     	},500);
@@ -1352,12 +1589,20 @@ Flotag.TagCompComponent = Ember.Component.extend({
 	
 
 	is_user: function(){
+
 		if(this.get('tagDetailed')){
 			return this.get('tagDetailed')._cls == "Tag.User";
 
 		}
 		return false;
 	}.property('tagDetailed._cls'),
+
+	isnt_poster: function(){
+		if(!this.get('poster')){
+			return true;
+		}
+		return this.get('tag').tag.$oid != this.get('poster')._id.$oid;
+	}.property("tag.tag"),
 
 
 
@@ -1387,6 +1632,25 @@ Flotag.TagCompComponent = Ember.Component.extend({
 
 	}.property('tag._id.$oid','user.default_tags'),
 
+	url: function(){
+		if(this.get("tagDetailed")){
+		if(this.get("tagDetailed") && this.get("tagDetailed")._cls == "Tag.User"){
+			return "/#/user/"+this.get("tagDetailed")._id.$oid.toString();
+
+		}
+		else if(this.get("tagDetailed") && this.get("tagDetailed")._cls != "Tag.User"){
+			if(!this.get("tagDetailed")._id){
+				return "";
+			}
+			//console.log(JSON.stringify(this.get("tagDetailed")));
+			return "/#/tag/"+this.get("tagDetailed")._id.$oid.toString();
+
+		}
+		else{
+			//console.log(this.get('tag'));
+		}
+	}
+	}.property("tagDetailed._id.$oid"),
 
 	imgUrl: function(){
 		return "/api/profile/"+this.get("tag")._id.$oid.toString();
@@ -1518,7 +1782,10 @@ Flotag.IndexController = Ember.ArrayController.extend({
 	  		
 	  	},
 
+
+
 	  	initCurrentTags: function(){
+
 	  			var self = this;
 		  		Ember.run.once(function(){
 		  			
@@ -1591,42 +1858,51 @@ function handleTag(self,e,tag){
 	if(!hoverComponent){
 		hoverComponent = Flotag.HoverTagComponent.create({tag:tag});
 		hoverComponent.append();
-		hoverComponent.set('isVisible',false);
+		if(!hoverComponent.get('isDestroyed')){
+			hoverComponent.set('isVisible',false);
+		}
 		Ember.run.next(function(){
-			hoverComponent.set('isVisible',true);
-			var p = $("#"+e.target.id);
-			var offset = p.offset();
-			console.log(offset);
-			var half = $(window).height()/2;
-			if(offset.top - $(window).scrollTop() < half){
-				$("#"+hoverComponent.elementId).offset({ top: e.pageY +25,  left: offset.left});
-				$("#"+hoverComponent.elementId).hide().fadeIn();
-			}
-			else{
-				$("#"+hoverComponent.elementId).offset({ top: e.pageY - $("#"+hoverComponent.elementId).height() - p.height() - 25 , left: offset.left});
-				$("#"+hoverComponent.elementId).hide().fadeIn();
-			}
+			if(!hoverComponent.get('isDestroyed')){
 
+				hoverComponent.set('isVisible',true);
+				var p = $("#"+e.target.id);
+				var offset = p.offset();
+				var half = $(window).height()/2;
+				if(offset){
+					if(offset.top - $(window).scrollTop() < half){
+						$("#"+hoverComponent.elementId).offset({ top: e.pageY +25,  left: offset.left});
+						$("#"+hoverComponent.elementId).hide().fadeIn();
+					}
+					else{
+						$("#"+hoverComponent.elementId).offset({ top: e.pageY - $("#"+hoverComponent.elementId).height() - p.height() - 25 , left: offset.left});
+						$("#"+hoverComponent.elementId).hide().fadeIn();
+					}
+				}
+			}
 		});
 		self.set('hoverComp',hoverComponent);
 
 		return;
 	}
 	else{
-		hoverComponent.set('tag',tag);
-		hoverComponent.set('isVisible',true);
+		if(!hoverComponent.get('isDestroyed')){
+
+			hoverComponent.set('tag',tag);
+			hoverComponent.set('isVisible',true);
+		}
 	}
 	var p = $("#"+e.target.id);
 	var offset = p.offset();
 	var half = $(window).height()/2;
-	
-	if(offset.top - $(window).scrollTop() < half){
-		$("#"+hoverComponent.elementId).offset({ top: e.pageY + 25 , left: offset.left});
-		$("#"+hoverComponent.elementId).hide().fadeIn();
-	}
-	else{
-		$("#"+hoverComponent.elementId).offset({ top: e.pageY - $("#"+hoverComponent.elementId).height() - p.height() - 25 , left: offset.left});
-		$("#"+hoverComponent.elementId).hide().fadeIn();
+	if(offset){
+		if(offset.top - $(window).scrollTop() < half){
+			$("#"+hoverComponent.elementId).offset({ top: e.pageY + 25 , left: offset.left});
+			$("#"+hoverComponent.elementId).hide().fadeIn();
+		}
+		else{
+			$("#"+hoverComponent.elementId).offset({ top: e.pageY - $("#"+hoverComponent.elementId).height() - p.height() - 25 , left: offset.left});
+			$("#"+hoverComponent.elementId).hide().fadeIn();
+		}
 	}
 }
 
@@ -1693,8 +1969,13 @@ Flotag.PostsController =  Ember.ArrayController.extend({
 			this.set('canLoadMore',true);
 			$("#ajax-loader").show();
 			this.set('isLoading',true);
+			console.log(sortby,1,this.get('feedTags'));
+	  		var feedTags =this.get('feedTags'); 
+	  		if(feedTags){
+	  			feedTags = JSON.stringify(feedTags);
+	  		}
 
-			Flotag.Post.getFeed(sortby,1,this.get('feedTags')).then(null,function(feed){
+			Flotag.Post.getFeed(sortby,1,feedTags).then(null,function(feed){
 				self.set('content',feed);
 				$("#ajax-loader").hide();
 				self.set('isLoading',false);
@@ -1941,6 +2222,124 @@ Flotag.UserController = Em.ObjectController.extend({
   	currentUser: Ember.computed.alias("controllers.application.currentUser"),
 	currTags: Ember.computed.alias("controllers.base.currTags"),
 	posts: Ember.computed.alias("controllers.posts"),
+	notifications: Ember.computed.alias("controllers.base.notifications"),
+
+	
+	documentReady: function(){
+
+	},
+
+
+
+
+	checkUserTagged: function(){
+
+		if(this.get('currentUser') && this.get('_id')){
+
+			this.get('content').set('userTagged',idInArray(this.get('currentUser').default_tags,this.get('_id').$oid));
+		}
+	}.observes('_id.$oid','currentUser.default_tags'),
+
+	actions: {
+		post: function(obj){
+			var self = this;
+			var tag = this.get("content");
+			if(tag){
+				
+
+				var text = $("#postTextArea").val();
+				if(text && text.length > 0){
+					Flotag.Post.post(text,[tag]).then(null,function(data){
+						self.get('application').refreshUser().then(null,function(user){
+										//possibly update feed
+							
+							Flotag.Post.getFeed("erank",1,JSON.stringify([tag.get('_id')])).then(null,function(feed){
+								self.get('posts').set('model',feed);
+								self.get('posts').set('page',1);
+								self.get('posts').set('canLoadMore',true);
+							});
+				
+						});
+					});
+				}
+			}
+			else{
+				showAlert($('#alert'),"Invalid Data");
+				return;
+			}
+			$("#postTextArea").val('');
+			//$("#post-tags").typeahead('setHintValue','');
+
+
+		},
+		tagUser: function(){
+	  		var self = this;
+	  		var tagAdded = this.get('content');
+	  		var currTags = this.get('currTags');
+
+	  		if(!currTags || !tagAdded){
+	  			return;
+	  		}
+
+			currTags.addObject(tagAdded);
+			this.propertyWillChange('currTags');
+			this.set('currTags',currTags);
+			this.propertyDidChange('currTags');
+	  		Flotag.User.updateTags(currTags).then(this,function(data){
+				self.get('application').refreshUser().then(null,function(user){
+								//possibly update feed
+		
+				});
+	  		});
+
+
+		},
+
+		untagUser: function(){
+			//this.controllerFor('posts').set('currTags',this.get('content').get('currTags'));
+	  		var self = this;
+	  		var tagRemoved = this.get('content');
+	  		var currTags = this.get('currTags');
+
+	  		if(!currTags || !tagRemoved || currTags.length <= 0){
+	  			return;
+	  		}
+			var indexToRemove = -1;
+			$.each(currTags, function( index, value ) {
+				if(value._id.$oid === tagRemoved._id.$oid){
+					indexToRemove = index;
+				}
+		  		
+			});
+			currTags.splice(indexToRemove,1);
+
+			this.propertyWillChange('currTags');
+			this.set('currTags',currTags);
+			this.propertyDidChange('currTags');
+	  		Flotag.User.removeTags([tagRemoved]).then(this,function(data){
+				self.get('application').refreshUser().then(null,function(user){
+								//possibly update feed
+		
+				});
+	  		});
+		}
+
+	}
+
+
+});
+
+
+
+Flotag.TagController = Em.ObjectController.extend({
+	needs: ['application','base' ,'posts'],
+	application: Ember.computed.alias("controllers.application"),
+	base: Ember.computed.alias("controllers.base"),
+  	currentUser: Ember.computed.alias("controllers.application.currentUser"),
+	currTags: Ember.computed.alias("controllers.base.currTags"),
+	posts: Ember.computed.alias("controllers.posts"),
+	notifications: Ember.computed.alias("controllers.base.notifications"),
+
 	
 	documentReady: function(){
 
@@ -2227,6 +2626,7 @@ Flotag.TreeNodeController = Ember.ObjectController.extend({
 });
 
 function showAlert($elem,message){
+
 	$elem.css("background-color","red");
 	$elem.find('h4').html(message);
 	$elem.fadeIn();
@@ -2239,7 +2639,7 @@ function showAlert($elem,message){
 function showInfo($elem,message){
 	$elem.css("background-color","blue");
 	$elem.find('h4').html(message);
-	$('#alert').fadeIn();
+	$elem.fadeIn();
     setTimeout(function(){
         //$('#alert').fadeOut();
         $elem.fadeOut();
@@ -2248,8 +2648,9 @@ function showInfo($elem,message){
 
 function showSuccess($elem,message){
 	$elem.css("background-color","green");
+	$elem.css("color","white");
 	$elem.find('h4').html(message);
-	$('#alert').fadeIn();
+	$elem.fadeIn();
     setTimeout(function(){
         $elem.fadeOut();
     }, 5000);
@@ -2358,7 +2759,7 @@ $(document).ready(function() {
 		  register($(this));
 		  return false;
 	});
-
+	loginBack();
 	$('#alert').hide();
 
 });
@@ -2376,17 +2777,19 @@ window.requestAnimFrame = (function(){
 function loginBack() {
 
     var i, j, canvas, context, points = [], width, height, numLines = 6;
-    width = $('body').width();
-    height = $('body').height();
+    width = $(window).width();
+    height = $(window).height();
     $("#curves").height(height);
     $("#curves").width(width);   
     $("#canvas").height(height);
     $("#canvas").width(width);   
     canvas = $("#canvas")[0];
-   
+   	if(!canvas){
+   		return;
+   	}
     context = canvas.getContext("2d");
-    canvas.width = $('body').width();;
-    canvas.height = $('body').height();;
+    canvas.width = $(window).width();;
+    canvas.height = $(window).height();;
     width = canvas.width;
     height = canvas.height;
     var time;
@@ -2439,14 +2842,14 @@ function loginBack() {
     	    			   $("#canvas").fadeIn({
     	    				   done: function(){
     	    				        for(i = 0; i < points.length; i += 1) {
-    		    		            		points[i].y = Math.random() * $('body').height();
-    		    		            		points[i].x = Math.random() * $('body').width();
+    		    		            		points[i].y = Math.random() * $(window).height();
+    		    		            		points[i].x = Math.random() * $(window).width();
     		    		            		points[i].vx = Math.random() * 4 - 2;
     		    		            		points[i].vy = Math.random() * 4 - 2;
-    		    		            	    $("#curves").height($('body').height());
-    		    		            	    $("#curves").width($('body').width());   
-    		    		            	    $("canvas").height($('body').height());
-    		    		            	    $("canvas").width($('body').width());   
+    		    		            	    $("#curves").height($(window).height());
+    		    		            	    $("#curves").width($(window).width());   
+    		    		            	    $("canvas").height($(window).height());
+    		    		            	    $("canvas").width($(window).width());   
     	    				        }	
 
     	    				   }
@@ -2541,8 +2944,12 @@ Ember.Handlebars.helper('sub', function(context, options){
 });
 
 function isImage(url,data){
-	if(data['content-type'].indexOf("image") != -1 || data.image.indexOf("livememe") != -1)
+	if(data['content-type']){
+	if(data['content-type'].indexOf("image") != -1 ||(data.image && data.image.indexOf("livememe") != -1)){
 	return true;
+	}
+	}
+	return false;
 }
 String.prototype.capitalize = function() {
     return this.replace(/(?:^|\s)\S/g, function(a) { return a.toUpperCase(); });
