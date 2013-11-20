@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0,user-scalable=no">
 
  <link rel="stylesheet" href="css/normalize.css">
-<link href="css/bootstrap.css" rel="stylesheet" media="screen">
+<link href="css/bootstrap3_cos.min.css" rel="stylesheet" media="screen">
 
 <link rel="stylesheet" href="css/font-awesome.min.css">
 <link rel="stylesheet" type="text/css"
@@ -96,6 +96,10 @@
   <nav class="navbar navbar-default" style="border: none;border-radius:0px;">
         <a class="navbar-brand " href="#"><img class="logo"
           src="/images/flotag_dark.png"></a>
+        {{#if controllers.application.isLoading}}
+          <img id="ajax-loader_nav" width="25" style="margin-top:15px;margin-right:20px;" src="/images/ajax-loader_nav.gif" >
+        {{/if}}
+
   </nav>
 	<div class="login">
 	<div id="curves"  >
@@ -170,42 +174,42 @@
                   <li class="use-blue">{{currentUser.reputation}} <i class="icon-star"></i></li>
                   <!--   <a class="span4" href="#">32 Tags</a>-->
                   <li class="use-blue">{{currTags.length}} Tags</li>
-                  <li class="use-blue">{{currentUser.frequency}} Following</li>
+                  <li class="use-blue"><a href="#" {{action "loadFollowers" currentUser._id.$oid target="controller.controllers.base" }} data-toggle="modal" data-target="#followersModal">{{currentUser.frequency}} Following</a></li>
                </ul>
             </div>
          </div>
          <div class="divider-horizontal">
            
          </div>
-         <button id="create-tag-button" href="#myModal" role="button" data-toggle="modal" class="btn btn-lg btn-primary col-md-12">Create Tag!</button>
-         <div class="recommended-tags">
-            <!-- <h4>Recommended Tags</h4> -->
-         </div>
+         <button class="btn btn-primary btn-lg left-btn" data-toggle="modal" data-target="#postpostModal">Write a Post!
+      </button>
+         <button id="create-tag-button" href="#myModal" role="button" data-toggle="modal" class="btn btn-lg btn-primary">Create a tag!</button>
+
       </div>
       <div class="col-md-7" id="midCol" >
          <div id="alert" class="alert">
             <button type="button" class="close" data-dismiss="alert">&times;</button>
             <h4></h4>
          </div>
-         <h3>Post</h3>
+
          {{view Flotag.PostPostView}}
          <div class="control-group tm-group"></div>
          <div class="post-container">
             <h3 class="flo-head">Feed</h3>
             <br/> 
-            <!--                                 <button href="#myModal" role="button" data-toggle="modal" class="btn btn-lg btn-primary pull-right">Create Tag!</button> -->
+            <!--                                 <button href="#myModal" role="button" data-toggle="modal" class="btn btn-lg btn-primary pull-right">Create a tag!</button> -->
             {{view Flotag.CurrentTagView}}
             <div class="divider-horizontal"></div>
             <div class="btn-group pull-left" data-toggle="buttons">
-               <label {{action "sort" "erank" target="posts"}} class="btn btn-primary active">
+               <label {{action "sort" "erank" target="posts"}} class="btn btn-sm btn-primary active">
                   <input {{action "sort" "erank" target="posts"}} type="radio" name="options" class="btn btn-primary active">Top
                </label>
-               <label {{action "sort" "new" target="posts"}}  class="btn btn-primary">
+               <label {{action "sort" "new" target="posts"}}  class="btn btn-sm btn-primary">
                   <input {{action "sort" "new" target="posts"}} type="radio" name="options" class="btn btn-primary btn-default">New
                </label>
             </div>
             <div class="align-right">
-               <button type="button" class="btn">
+               <button type="button" class="btn btn-sm">
                <i class="icon-double-angle-down"></i>
                </button>
             </div>
@@ -214,9 +218,26 @@
          {{view Flotag.CreateTagView}}
          {{view Flotag.ChangePassView}}
          {{view Flotag.EditProfileView}}
+
+        
+        {{follower-comp user=currentUser followers=controllers.base.followers}}
          <!-- <div class=".col-sm-3"></div> -->
       </div>
       <div class="col-md-2">
+         <div class="divider-horizontal">
+           
+         </div>
+         <div class="trending-tags">
+            <h4>Trending Tags</h4>
+            <p>Most used tags in the last {{trendingTime}} hours.</p>
+            {{#if trendingTags}}
+            {{#with currentUser as currentUser}} 
+            {{#each trendingTags}}
+              {{tag-comp user=currentUser tag = this }} x{{number}}<br/>
+            {{/each}}
+            {{/with}}
+            {{/if}}
+         </div>
         {{partial "_footer"}}
       </div>
    </div>
@@ -234,10 +255,10 @@
 </script>
 
 <script type="text/x-handlebars" data-template-name="search-view">
-            <div class="form-group">
+            <div class="form-group search-form">
                 <div class="input-group" style="width: 200px;">
                     <span class="input-group-btn">
-                        <span class="btn btn-primary"><i class="icon-search"></i></span>
+                        <span class="btn btn-primary btn-sm search-btn"><i class="icon-search"></i></span>
                     </span>
             <input id="search-input" type="text" class="form-control search-query" name="typeahead-search-input" placeholder="Search">
                 </div>
@@ -256,19 +277,43 @@
 </script>
 
 <script type="text/x-handlebars" data-template-name="post-post-view">
-
+<div class="modal fade" id="postpostModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4 class="modal-title">Write a Post!</h4>
+      </div>
+      <div class="modal-body">
+        <div id="post-modal-alert" class="alert a-hide">
+                <button type="button" class="close" data-dismiss="alert">&times;</button>
+                 <h4></h4> 
+                
+        </div>
            <form class="well">
             <textarea id="postTextArea" class="input-block-level form-control"
                placeholder="Write a Post"></textarea>
-            </br>
-                        <button {{action "post" this target="posts"}} type="button" class="btn btn-primary pull-right"
-            id="postBtn">Post!</button>
-            <span id="postTagCont"></span>
-             <input id="post-tags" type="text" name="typeahead-post-tags"
-               placeholder="Tags (Max 1 per post)"
-               class="tm-input tm-input-success  typeahead-post-tags form-control" />
+            <br/>
 
-         </form>
+           
+              <span id="postTagCont" class="postTagCont"></span>
+
+
+             <input id="post-tags" type="text" name="typeahead-post-tags" placeholder="Tags (Max 1 per post)" class="tm-input tm-input-success typeahead-post-tags form-control" />
+             </form>
+             <div class="well">
+             <p class="btn-inline" style="margin-right:5px;font-size:12px;color: gray;">Can't find a tag you would like to use?</p>
+              <button href="#myModal" role="button" data-toggle="modal" class="btn btn-sm btn-primary btn-inline">Create a tag!</button>
+
+             </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+        <button {{action "post" this target="posts"}} type="button" class="btn btn-primary">Post!</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div>
 </script>
 
 
@@ -279,12 +324,12 @@
    <div class="container">
       <div class="row">
          <div class="col-sm-3" id="leftCol">
-              <button id="create-tag-button" href="#myModal" role="button" data-toggle="modal" class="btn btn-lg btn-primary col-md-12">Create Tag!</button>
+              <button id="create-tag-button" href="#myModal" role="button" data-toggle="modal" class="btn btn-lg btn-primary col-md-12">Create a tag!</button>
 
             <!-- <div class="divider-horizontal"></div> -->
          </div>
-         <div class="col-sm-8" id="midCol">
-            <div class="tm-tag mini-profile user-mini-profile">
+         <div class="col-sm-7" id="midCol">
+            <div class="tm-tag user-mini-profile">
                <div class="profile-summary">
                   {{#if userProfileImage}}
                   <a href="#"> <img class="profile-image pull-left img-responsive" {{bindAttr src="userProfileImage" }} width="150" height="150"></a>
@@ -305,7 +350,7 @@
                         <li class="use-blue"><a href="#">{{reputation}} <i class="icon-star"></i></a></li>
                         <!--   <a class="span4" href="#">32 Tags</a>-->
                         <li class="use-blue"><a href="#">{{default_tags.length}} Tags</a></li>
-                        <li class="use-blue"><a href="#">{{frequency}} Following</a></li>
+                        <li class="use-blue"><a href="#" {{action "loadFollowers" _id.$oid target="controller.controllers.base" }} data-toggle="modal" data-target="#followersModal">{{frequency}} Following</a></li>
                      </ul>
                   </div>
                </div>
@@ -330,11 +375,11 @@
             <div class="divider-horizontal"></div>
             <div style="margin-bottom:50px;">
             <div class="btn-group pull-left" data-toggle="buttons">
-               <label {{action "sort" "erank" target="posts"}} class="btn btn-primary active">
-                  <input {{action "sort" "erank" target="posts"}} type="radio" name="options" class="btn btn-primary active">Top
+               <label {{action "sort" "erank" target="posts"}} class="btn btn-sm btn-primary active">
+                  <input {{action "sort" "erank" target="posts"}} type="radio" name="options" class="btn btn-sm btn-primary active">Top
                </label>
-               <label {{action "sort" "new" target="posts"}}  class="btn btn-primary">
-                  <input {{action "sort" "new" target="posts"}} type="radio" name="options" class="btn btn-primary btn-default">New
+               <label {{action "sort" "new" target="posts"}}  class="btn btn-sm btn-primary">
+                  <input {{action "sort" "new" target="posts"}} type="radio" name="options" class="btn btn-sm btn-primary btn-default">New
                </label>
             </div>
             </div>
@@ -347,8 +392,10 @@
             {{view Flotag.CreateTagView}}
             {{view Flotag.ChangePassView}}
             {{view Flotag.EditProfileView}}
+            {{follower-comp user=this followers=controllers.base.followers}}
+
          </div>
-         <div class="col-sm-1">
+         <div class="col-sm-2">
 
          </div>
       </div>
@@ -365,15 +412,17 @@
    {{partial "_nav_bar"}}
    <div class="container">
       <div class="row">
-         <div class="col-sm-3" id="leftCol">
-         <button id="create-tag-button" href="#myModal" role="button" data-toggle="modal" class="btn btn-lg btn-primary col-md-12">Create Tag!</button>
+         <div class="col-sm-3 col-md-3" id="leftCol">
+         <button id="create-tag-button" href="#myModal" role="button" data-toggle="modal" class="btn btn-lg btn-primary col-md-12">Create a tag!</button>
 
             <!-- <div class="divider-horizontal"></div> -->
          </div>
-         <div class="col-sm-8" id="midCol">
-            <div class="tm-tag mini-profile user-mini-profile">
+         <div class="col-sm-7 col-md-7" id="midCol">
+            <div class="tm-tag user-mini-profile">
                <div class="profile-summary">
+                  {{#if tagProfileImage}}
                   <a href="#"> <img class="profile-image pull-left" {{bindAttr src="tagProfileImage" }} width="150" height="150"></a>
+                  {{/if}}
                   <div class="user-data align-right">
                      <h2 class="use-blue">{{name}}</h2>
                      <h4 class="use-blue ">{{about}}</h4>
@@ -386,14 +435,14 @@
                      {{/if}}
                      {{/unless}}
                      <ul class="userpage-stats">
-                        <li class="use-blue"><a href="#">{{frequency}} Following</a></li>
+                        <li class="use-blue"><a href="#" {{action "loadFollowers" _id.$oid target="controller.controllers.base" }} data-toggle="modal" data-target="#followersModal">{{frequency}} Following</a></li>
                      </ul>
                   </div>
                </div>
             </div>
             <div class="divider-horizontal"></div>
             <form class="well">
-               <textarea id="postTextArea" class="input-block-level span12"
+               <textarea id="postTextArea" class="input-block-level form-control span12"
                   placeholder="Write a Post"></textarea>
                <br/>
                <span id="postTagCont">
@@ -404,11 +453,11 @@
             <div class="divider-horizontal"></div>
             <div style="margin-bottom:50px;">
             <div class="btn-group pull-left" data-toggle="buttons">
-               <label {{action "sort" "erank" target="posts"}} class="btn btn-primary active">
-                  <input {{action "sort" "erank" target="posts"}} type="radio" name="options" class="btn btn-primary active">Top
+               <label {{action "sort" "erank" target="posts"}} class="btn btn-sm btn-primary active">
+                  <input {{action "sort" "erank" target="posts"}} type="radio" name="options" class="btn btn-sm btn-primary active">Top
                </label>
-               <label {{action "sort" "new" target="posts"}}  class="btn btn-primary">
-                  <input {{action "sort" "new" target="posts"}} type="radio" name="options" class="btn btn-primary btn-default">New
+               <label {{action "sort" "new" target="posts"}}  class="btn btn-sm btn-primary">
+                  <input {{action "sort" "new" target="posts"}} type="radio" name="options" class="btn btn-sm btn-primary btn-default">New
                </label>
             </div>
             </div>
@@ -421,8 +470,10 @@
             {{view Flotag.CreateTagView}}
             {{view Flotag.ChangePassView}}
             {{view Flotag.EditProfileView}}
+            {{follower-comp user=this followers=controllers.base.followers}}
+
          </div>
-         <div class="col-sm-1">
+         <div class="col-sm-2 col-md-2">
          </div>
       </div>
                   {{partial "_footer"}}
@@ -494,9 +545,9 @@
                   {{#with user as user}}
                     {{#each tags}}
 
-                      
-                      {{tag-comp tag=this user=currentUser poster=currentUser}}
-                     
+                      {{#if user}}                      
+                      {{tag-comp tag=this user=currentUser poster=user}}
+                      {{/if}}
                     {{/each}}
                   {{/with}}
                   {{/with}}
@@ -506,12 +557,14 @@
                   </div>
                   {{/link-to}}
                </div>
-               <div class="btn-group post-btn-group">
-                  <a {{action "upvote" this }} type="button" {{bind-attr class=":btn :btn-default upvoted"}} ><i class="icon-chevron-up"></i></a>
-                  <a type="button" class="btn btn-default numvotes">{{sub upvotes downvotes}}</a>
-                  <a {{action "downvote" this }} type="button" {{bind-attr class=":btn :btn-default downvoted"}}><i class="icon-chevron-down"></i></a>
-                  <a {{action "toggleReplying" this}} type="button" class="btn btn-default"><i class="icon-reply"></i>Reply</a>
-                  <a {{action "toggleReplies" this}} type="button" class="btn btn-default"><i {{bind-attr class="repliesHidden:icon-double-angle-down:icon-double-angle-up"}}></i></a>
+                               <span class="date pull-right">{{timeago datePosted}}</span>
+
+               <div class="btn-group-sm post-btn-group">
+                  <a {{action "upvote" this }} type="button" {{bind-attr class=":btn :btn-sm :btn-default upvoted"}} ><i class="icon-chevron-up"></i></a>
+                  <a type="button" class="btn btn-sm numvotes">{{sub upvotes downvotes}}</a>
+                  <a {{action "downvote" this }} type="button" {{bind-attr class=":btn :btn-sm :btn-default downvoted"}}><i class="icon-chevron-down"></i></a>
+                  <a {{action "toggleReplying" this}} type="button" class="btn btn-sm btn-default"><i class="icon-reply"></i>Reply</a>
+                  <a {{action "toggleReplies" this}} type="button" class="btn btn-sm btn-default"><i {{bind-attr class="repliesHidden:icon-double-angle-down:icon-double-angle-up"}}></i></a>
                   <!--              <button type="button" class="btn"><i class="icon-film icon-large use-blue"> Play Video +</i></button>           
                      -->        
                   {{#if previewHidden}}
@@ -534,8 +587,7 @@
                   {{/if}}
 
                </div>
-               <br/>
-                <span class="date">{{timeago datePosted}}</span>
+               <!-- <br/> -->
 
             {{#if isReplying}}
               {{view Flotag.ReplyingView}}
@@ -570,10 +622,10 @@
 
 
  <div class="btn-group post-btn-group">
-  <a {{action "upvote" user post node }} type="button" {{bind-attr class=":btn upvoted:upvoted"}} ><i class="icon-chevron-up"></i></a>
-  <a type="button" class="btn btn">{{sub upvotes downvotes}}</a>
-  <a {{action "downvote" user post node }} type="button" {{bind-attr class=":btn downvoted:downvoted"}}><i class="icon-chevron-down"></i></a>
-  <a {{action "toggleReplying" this}} type="button" class="btn btn"><i class="icon-reply"></i>Reply</a>
+  <a {{action "upvote" user post node }} type="button" {{bind-attr class=":btn :btn-default upvoted:upvoted"}} ><i class="icon-chevron-up"></i></a>
+  <a type="button" class="btn btn-default">{{sub upvotes downvotes}}</a>
+  <a {{action "downvote" user post node }} type="button" {{bind-attr class=":btn :btn-default  downvoted:downvoted"}}><i class="icon-chevron-down"></i></a>
+  <a {{action "toggleReplying" this}} type="button" class="btn btn-default"><i class="icon-reply"></i>Reply</a>
 
 
   </div>
@@ -625,7 +677,7 @@
 
                 <div class="fileupload-preview fileupload-exists thumbnail" style="max-width: 85px; max-height: 85px; line-height: 20px;"></div>
 
-          <span class="btn btn-file"><span class="fileupload-new">Select image</span><span class="fileupload-exists">Change</span><input  type="file" /></span>
+          <span class="btn btn-file btn-default"><span class="fileupload-new">Select image</span><span class="fileupload-exists">Change</span><input  type="file" /></span>
           <a href="#" class="btn fileupload-exists" data-dismiss="fileupload">Remove</a>
         </div>
       </div> 
@@ -756,6 +808,7 @@
 <div class="arrow-up"></div>
 
 <div id="notifications">
+
 	{{#each notifications}}
   {{#link-to "user" user.$oid}}
 
@@ -782,7 +835,15 @@
       {{/link-to}}
       </span>
       <span class="navbar-toggle">
-      <span id="mobile-btn-nots" class="btn btn-primary mobile-btn"><i class="icon-globe"></i></span>
+      <span id="mobile-btn-nots" class="btn btn-primary mobile-btn">
+                       {{#if unreadNots}}
+                  <i class="icon-globe  " style="color:red;"></i>
+
+               {{else}}
+                  <i class="icon-globe  "></i>
+
+               {{/if}}
+      </span>
       </span>
       <span class="navbar-toggle">
       <span id="mobile-btn-search " class="btn btn-primary mobile-btn"><i class="icon-search"></i></span>
@@ -806,7 +867,13 @@
           {{view Flotag.SearchView}}
       </span>
       <span id="drop-bar-nots" class="hide drop-bar-item">
-     
+<!--                 {{#if computedRead}}
+
+                {{#if unreadNots}}
+                  <span class="unread-nots">{{computedRead}}</span>
+                {{/if}}
+                {{/if}}  -->
+
                {{view Flotag.NotificationView}}
       </span>
        <span id="drop-bar-settings" class="hide drop-bar-item">
@@ -821,10 +888,26 @@
    <div class="navbar-header navbar-right">
       <div class="navbar-collapse collapse" >
          <ul class="nav navbar-nav navbar-right">
+            {{#if controllers.application.isLoading}}
+            <li><img id="ajax-loader_nav" width="25" style="margin-top:15px;margin-right:20px;" src="/images/ajax-loader_nav.gif" ></li>
+            {{/if}}
             <li>
-               <div {{action toggleProperty "showNotifications"}} id="not-container"  style="position:relative">
-               <i class="icon-globe icon-large use-blue"></i>         
-               {{#if showNotifications}}
+               <div {{action "readAllNotifications" target="controllers.index"}} id="not-container"  style="position:relative">
+               {{#if unreadNots}}
+                  <i class="icon-globe icon-large use-blue" style="color:orange;"></i>
+
+               {{else}}
+                  <i class="icon-globe icon-large use-blue"></i>
+
+               {{/if}}
+                {{#if computedRead}}
+
+                {{#if unreadNots}}
+                  <span class="unread-nots">{{computedRead}}</span>
+                {{/if}}
+                {{/if}}         
+
+               {{#if controllers.index.showNotifications}}
                {{view Flotag.NotificationView}}
                {{/if}}
                </div>
@@ -835,7 +918,7 @@
                 </form>
             </li>
             <li>
-            <div class="navbar-header navbar-right">
+            <div class="navbar-header navbar-right username-nav">
               {{#link-to "user" currentUser._id.$oid }}
                 <p  style="color:white;" class="navbar-text ">
                 {{currentUser.name}}
@@ -845,7 +928,7 @@
             </li>
             <li>
             <div id="settings-cog" class="navbar-header navbar-right">
-              <li  class="dropdown">
+              <li  class="settings-dd dropdown">
                 <a class="dropdown-toggle" data-toggle="dropdown" href="#">          
                   <i class="icon-cogs icon-large use-blue"></i>
                 </a>
@@ -931,14 +1014,61 @@
 </script>
 
 <script type="text/x-handlebars" id="components/tag-comp">
-
+{{#if poster}}
   {{#if isnt_poster}}
     <a {{bindAttr href="url"}}>
 
   {{tag.name}}
   </a>
   {{/if}}
+  {{else}}
+    <a {{bindAttr href="url"}}>
 
+  {{tag.name}}
+  </a>
+  {{/if}}
+
+</script>
+
+<script type="text/x-handlebars" id="components/follower-comp">
+<div class="modal fade" id="followersModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4 class="modal-title">{{user.name}}'s Followers</h4>
+      </div>
+      <div class="modal-body">
+        <div class="followers">
+          {{#if followers.isLoaded}}
+          {{#each followers}}
+            {{user-list-view-comp user=this}}
+            <br/>
+          {{/each}}
+          {{else}}
+             <img id="ajax-loader_nav" width="35" style="margin-top:15px;margin-right:20px;" src="/images/ajax-loader_nav_white.gif" >
+
+          {{/if}}
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+        
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div>
+</script>
+
+<script type="text/x-handlebars" id="components/user-list-view-comp">
+   <div class="lst-item">
+   <img class="lst-img pull-left img-responsive" {{bindAttr src="user.userProfileImage"}} width="50" height="50"> 
+   <div class="lst-info">
+     <p>{{user.name}}</p>
+     <p>{{user.username}}</p>
+     <p>{{user.about}}</p>
+   </div>
+   </div>
 </script>
 
 </body>

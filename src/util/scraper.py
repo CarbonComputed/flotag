@@ -228,7 +228,7 @@ class Scraper:
                 if self.soup.title:
                     link_data['title'] = self.soup.title.string
             og_description = self.soup.find('meta', property='og:description')
-            print og_description
+            #print og_description
             if og_description and og_description['content']:
                 link_data['description'] = og_description['content']
         link_data['content-type'] = self.content_type
@@ -258,6 +258,7 @@ class Scraper:
                 return thumbnail_spec['href']
 
         for image_url in self.image_urls():
+            #print image_url
             size = fetch_size(image_url, referer = self.url)
             if not size:
                 continue
@@ -270,7 +271,8 @@ class Scraper:
                 continue
 
             #ignore excessively long/wide images
-            if max(size) / min(size) > 1.5:
+            if max(size) / min(size) > 4:
+                
                 # log.debug('ignore dimensions %s' % image_url)
                 continue
 

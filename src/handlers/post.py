@@ -12,7 +12,7 @@ import util.ranking
 
 from bson import ObjectId
 
-
+from util.callit import *
 
 class PostHandler(RestHandler):
     
@@ -39,7 +39,7 @@ class PostHandler(RestHandler):
             else:
                 tags = loads(tags)
 
-            response.model['posts'] = yield gen.Task(PostActions._get_feed,user, tags, nresults, page, sort)
+            response.model['posts'],error = yield gen.Task(CallIT.gen_run,PostActions._get_feed,user, tags, nresults, page, sort)
         except Exception, e:
             response.success = False
             response.args['Message'] = e.message
@@ -55,7 +55,7 @@ class PostHandler(RestHandler):
             post_model = self.get_json_model("post")
             
             user = yield gen.Task(UserActions._get_user_by_id,self.current_uid())
-            response.model['post'] = yield gen.Task(PostActions._create_post,user, post_model)
+            response.model['post'],error = yield gen.Task(CallIT.gen_run,PostActions._create_post,user, post_model)
         except Exception, e:
             response.success = False
             response.args['Message'] = e.message
@@ -119,17 +119,17 @@ class PostActions:
         feed = post_coll.aggregate([    
                                     { "$match" : { "tags" : { "$elemMatch" : { "tag" : { "$in" : tags}}}}},
                                     {"$unwind" : "$tags"},
-                                    {"$group": {"_id" : "$tags.tag", "name" :{ "$first": "$tags.name"},"posts" : {"$addToSet" : {"postid" : "$_id", "content" : "$content",
+                                    {"$group": {"_id" : "$tags.tag", "name" :{ "$first": "$tags.name"}, "is_user" :{ "$first": "$tags.is_user"},"posts" : {"$addToSet" : {"postid" : "$_id", "content" : "$content",
         "rank" : "$rank","user" : "$user", "upvotes" : "$upvotes", "downvotes" : "$downvotes", "date_created" : "$date_created", "date_modified" : "$date_modified"
         }},
                                     "trank" : {"$max" : "$rank"}}},
 
     {"$unwind" : "$posts"},
-    {"$project":{ "_id" : "$posts.postid", "rank" : "$posts.rank", "content" : "$posts.content", "user" : "$posts.user", "tag" : {"id" :"$_id","name" : "$name" },
+    {"$project":{ "_id" : "$posts.postid", "rank" : "$posts.rank", "content" : "$posts.content", "user" : "$posts.user", "tag" : {"id" :"$_id","name" : "$name" ,"is_user" : "$is_user"},
     "upvotes" : "$posts.upvotes", "downvotes" : "$posts.downvotes", "date_created" : "$posts.date_created", "date_modified" : "$posts.date_modified",
         "erank" : {"$divide" : ["$posts.rank","$trank"]}}},
      
-       {"$group" : {"_id" : "$_id","tags" : {"$addToSet" : { "tag" : "$tag.id","name": "$tag.name"
+       {"$group" : {"_id" : "$_id","tags" : {"$addToSet" : { "tag" : "$tag.id","name": "$tag.name","is_user" : "$tag.is_user"
         }},"erank" : {"$max" : "$erank"
         },"content" :{"$first" : "$content"},"rank" :{"$first" : "$rank"},"user" :{"$first" : "$user"},
         "upvotes" : {"$first" : "$upvotes"}, "downvotes" : {"$first" : "$downvotes"}, "date_created" : {"$first" : "$date_created"}
@@ -138,32 +138,46 @@ class PostActions:
         {"$sort" : {sort : order,"_id" : 1}},
         {"$skip" : (page -1)*nresults},
         {"$limit" : nresults}])
-       
+#         import time
+#         time.sleep(3)
         if callback != None:
             return callback(feed['result'])
         return feed['result']
         
         
     @staticmethod
-    def  _create_post(user,post_model,callback=None):
+    def  _create_post(user,post_model,max_tags=1,callback=None):
             post_model = PostActions._clean_post_json(post_model)
             post = Post()
             tags = post_model['tags']
             post.content = post_model['content']
             post.user = user
             post.rank = util.ranking.hot(1,0,post.date_created)
+            ptags = tags
             tags = Tag.objects(id__in=tags)
-            tag = EmbeddedTag(name=tags.first().name,tag=tags.first(),is_user=isinstance(tags.first(), User))
+            
+            emtags = []
+            tctr = 0
+            for t in tags:
+                if(tctr == max_tags):
+                    break
+                tag = EmbeddedTag(name=t.name,tag=t,is_user=False)
+                emtags.append(tag)
+                tctr += 1
             #check if user and notify
             #support for more than one tags
             utag = EmbeddedTag(name=user.name,tag=user,is_user=True) 
-            post.tags.append(tag)
-            post.tags.append(utag)
+            emtags.append(utag)
+            post.tags.extend(emtags)
             post.save()
             vote = Vote(post_id=post.id,state=1)
             user.reload()
             user.update(push__votes=vote)
             user.update(inc__reputation=2)
+            if len(tags) > 0:
+                message = user.username + " has tagged you in a post"
+                n = PostNotification(message=message,user=user.id,post=post.id)
+                User.objects(Q(id__in=ptags) & Q(id__ne=user.id)).update(push__notifications=n)
             user.save()
             if callback != None:
                 return callback(post)

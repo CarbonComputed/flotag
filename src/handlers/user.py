@@ -16,6 +16,8 @@ import base64
 import logging
 import datetime
 
+from util.callit import *
+
 from sys import platform as _platform
 from recaptcha.client import captcha
 
@@ -40,7 +42,7 @@ class UserHandlerById(RestHandler):
             elif self.current_uid != id and detailed:
                 raise Exception("Invalid Permissions")
             else:
-                response.model['user'] = yield gen.Task(UserActions._get_user_by_id,id,detailed=False,includes=fields)
+                response.model['user'],error = yield gen.Task(CallIT.gen_run,UserActions._get_user_by_id,id,detailed=False,includes=fields)
         except Exception, e:
             response.success = False
             response.args['Message'] = e.message
@@ -65,7 +67,7 @@ class UserHandlerByName(RestHandler):
             elif self.current_username() != username and detailed:
                 raise Exception("Invalid Permissions")
             else:
-                response.model['user'] = yield gen.Task(UserActions._get_user_by_name,username,detailed,includes=fields)
+                response.model['user'],error = yield gen.Task(CallIT.gen_run,UserActions._get_user_by_name,username,detailed,includes=fields)
         except Exception, e:
             response.success = False
             response.args['Message'] = e.message
@@ -93,8 +95,8 @@ class UserHandlerByName(RestHandler):
             img = self.get_json_model("profile_img",default=None)
             user_data = self.get_json_model('user')
             
-            user = yield gen.Task (UserActions._register,user_data,user_data['password'])
-            pro_img = yield gen.Task(ProfileImageActions.save_profile_image,user.id, user, img)
+            user,error = yield gen.Task (CallIT.gen_run,UserActions._register,user_data,user_data['password'])
+            pro_img,error = yield gen.Task(CallIT.gen_run,ProfileImageActions.save_profile_image,user.id, user, img)
             #Maybe return user here,
             response.model['user'] = "success"
         except Exception, e:
@@ -155,6 +157,23 @@ class UserMeHandler(UserHandlerByName):
         super(UserMeHandler, self).get(self.current_username())
 
 
+class UserFollowerHandler(RestHandler):
+    
+    @tornado.web.authenticated
+    @tornado.web.asynchronous
+    @gen.coroutine
+    def get(self,username=None):
+        response = ResponseModel()
+        try:
+            if username == None:
+                username = self.current_uid()
+            tags,error = yield gen.Task(CallIT.gen_run,UserActions._get_followers,username)
+            response.model['followers'] = tags
+
+        except Exception, e:
+            response.success = False
+            logger.error(e)
+        self.write_json(response)
     
 
 class UserDefaultTagHandler(RestHandler):
@@ -169,7 +188,7 @@ class UserDefaultTagHandler(RestHandler):
                 cur_user = yield gen.Task(UserActions._get_user_by_id,self.current_uid())
             else:
                 cur_user = yield gen.Task(UserActions._get_user_by_id,username)
-            tags = yield gen.Task(UserActions._get_default_tags,cur_user)
+            tags,error = yield gen.Task(CallIT.gen_run,UserActions._get_default_tags,cur_user)
             response.model['tags'] = tags
         except Exception, e:
             response.success = False
@@ -184,7 +203,8 @@ class UserDefaultTagHandler(RestHandler):
         try:
             tags = self.get_json_model('tags')
             cur_user = yield gen.Task(UserActions._get_user_by_id,self.current_uid(),detailed=True,deref=False)
-            user = yield gen.Task (UserActions._add_tags_default,cur_user, tags, save=True)
+            cur_user.reload()
+            user,error = yield gen.Task (CallIT.gen_run,UserActions._add_tags_default,cur_user, tags, save=True)
             response.model['user'] = "user"
 #             print user.default_tags
         except Exception, e:
@@ -202,7 +222,9 @@ class UserDefaultTagHandler(RestHandler):
         try:
             tags = self.get_json_model('tags')
             cur_user = yield gen.Task(UserActions._get_user_by_id,self.current_uid(),detailed=True,deref=False)
-            user = yield gen.Task (UserActions._remove_tags_default,cur_user, tags, save=True)
+            cur_user.reload()
+
+            user,error = yield gen.Task (CallIT.gen_run,UserActions._remove_tags_default,cur_user, tags, save=True)
             response.model['user'] = "user"
 #             print user.default_tags
         except Exception, e:
@@ -227,7 +249,7 @@ class NotificationHandler(RestHandler):
             self.write_json(response)
             return  
         try:
-            response.model['notifications'] = yield gen.Task(UserActions._get_notifications,self.current_uid(), nresults, page)
+            response.model['notifications'],error = yield gen.Task(CallIT.gen_run,UserActions._get_notifications,self.current_uid(), nresults, page)
         except Exception, e:
             response.success = False
             response.args['Message'] = e.message
@@ -277,7 +299,7 @@ class UserActions:
             if includes == None:
                 includes = []
             if excludes == None:
-                excludes = []
+                excludes = ["date_modified","reg_id","password","salt"]
             if not detailed:
                 excludes.extend(["reg_id","password","notifications","current_tags","votes","salt","email","date_modified"])
             if not deref:
@@ -295,7 +317,7 @@ class UserActions:
             if includes == None:
                 includes = []
             if excludes == None:
-                excludes = []
+                excludes = ["date_modified","reg_id","password","salt"]
             if not detailed:
                 excludes.extend(["password","notifications","current_tags","votes","salt","email","reg_id"])
             if not deref:
@@ -382,7 +404,9 @@ class UserActions:
         user = User.objects(id=user_id).first()
         start = ((page-1) * nresults)
         end = (((page-1) * nresults)+nresults)
-        nots = user.notifications[start:end]
+        nots = user.notifications
+        nots.reverse()
+        nots = nots[start:end]
         if callback != None:
             return callback(nots)
         return nots
@@ -399,12 +423,12 @@ class UserActions:
 #         print set(user.default_tags) 
 #         print set(tags) - set(user.default_tags) 
         Tag.objects(id__in=tags).update(inc__frequency=1)
-        
+#         print  "tags",Tag.objects(id__in=tags)
         #Push a notification to the users that says you are following them
         if len(tags) > 0:
-            message = user.username + " has tagged you"
+            message = user.username + " has added you as a tag."
             n = TagNotification(message=message,user=user)
-            User.objects(id__in=tags).update(push__notifications=n)
+            User.objects(Q(id__in=tags) & Q(id__ne=user.id)).update(push__notifications=n)
             
 
         if callback != None:
@@ -432,6 +456,15 @@ class UserActions:
         if callback != None:
             return callback(tags)
         return tags
+    
+    @staticmethod
+    def _get_followers(uid,callback=None):
+        excludes = ["password","notifications","current_tags","votes","salt","email"]
+        followers = User.objects(default_tags=ObjectId(uid)).exclude(*excludes)
+        if callback != None:
+            return callback(followers)
+        return followers
+    
     
     @staticmethod
     def _activate(user,save=True):

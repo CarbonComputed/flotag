@@ -38,6 +38,10 @@ class Notification(EmbeddedDocument):
     date_created = DateTimeField(default=datetime.datetime.utcnow)
     date_modified = DateTimeField(default=datetime.datetime.utcnow)
     
+class PostNotification(Notification):
+    post = ObjectIdField()
+    user = ObjectIdField()
+    
 class TagNotification(Notification):
     user = ReferenceField('User')
     

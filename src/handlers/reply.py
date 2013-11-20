@@ -9,6 +9,7 @@ from tornado import gen
 import tornado.web
 
 import util.ranking
+from util.callit import *
 
 from models.post import *
 
@@ -32,7 +33,7 @@ class ReplyHandler(RestHandler):
             return  
         try:
 #             user = yield gen.Task(UserActions._get_user_by_id,self.current_uid())
-            response.model['replies'] = yield gen.Task(ReplyActions._get_replies,post_id,sort,nresults,page)
+            response.model['replies'],error = yield gen.Task(CallIT.gen_run,ReplyActions._get_replies,post_id,sort,nresults,page)
         except Exception, e:
             response.success = False
             response.args['Message'] = e.message
@@ -49,7 +50,7 @@ class ReplyHandler(RestHandler):
             
             content = reply_model['content']
             user = yield gen.Task(UserActions._get_user_by_id,self.current_uid())
-            response.model['reply'] = yield gen.Task(ReplyActions._create_reply,user, post_id,content,reply_id)
+            response.model['reply'],error = yield gen.Task(CallIT.gen_run,ReplyActions._create_reply,user, post_id,content,reply_id)
         except Exception, e:
             response.success = False
             response.args['Message'] = e.message

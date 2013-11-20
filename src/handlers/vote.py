@@ -12,6 +12,8 @@ from tornado import gen
 import tornado.web
 from mongoengine import *
 
+from util.callit import *
+
 logger = logging.getLogger(__name__)
 
 
@@ -33,18 +35,18 @@ class VoteHandler(RestHandler):
             vote = None
             if reply_id == None:
                 if state == 1:
-                    vote = yield gen.Task(VoteActions._upvote_post,user, post, state)
+                    vote,error = yield gen.Task(CallIT.gen_run,VoteActions._upvote_post,user, post, state)
                 elif state == -1:
-                    vote = yield gen.Task(VoteActions._downvote_post,user, post, state)
+                    vote,error = yield gen.Task(CallIT.gen_run,VoteActions._downvote_post,user, post, state)
             else:
                     replies =filter(lambda x: x.id == ObjectId(reply_id), post.replies)
                     if len(replies) != 1:
                         raise Exception("There can only be one!!")
                     reply = replies[0]
                     if state == 1:
-                        vote = yield gen.Task(VoteActions._upvote_reply,user, post,reply, state)
+                        vote,error = yield gen.Task(CallIT.gen_run,VoteActions._upvote_reply,user, post,reply, state)
                     elif state == -1:
-                        vote = yield gen.Task(VoteActions._downvote_reply,user, post, reply,state)
+                        vote,error = yield gen.Task(CallIT.gen_run,VoteActions._downvote_reply,user, post, reply,state)
             
             response.model = vote
         except Exception, e:
@@ -143,7 +145,7 @@ class VoteActions:
                 reply.user.update(inc__reputation=2)
             elif vote.state == 1:
                 raise Exception("User has already upvoted this post")
-            reply.rank = util.ranking.confidence(post.upvotes,post.downvotes)
+            reply.rank = util.ranking.confidence(reply.upvotes,reply.downvotes)
             post.save()
             user.save()
             if callback != None:
@@ -170,7 +172,7 @@ class VoteActions:
                 vote.state = 0
                 reply.upvotes -=1
                 reply.user.update(dec__reputation=2)
-            reply.rank = util.ranking.confidence(post.upvotes,post.downvotes)
+            reply.rank = util.ranking.confidence(reply.upvotes,reply.downvotes)
             post.save()
             user.save()
             if callback != None:

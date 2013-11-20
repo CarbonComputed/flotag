@@ -13,16 +13,22 @@ import hashlib
 import logging
 import cStringIO
 
+from util.callit import *
 logger = logging.getLogger(__name__)
+def_image = open('static/images/placeholder.jpeg', 'rb')
+fbytes = def_image.read()
+def_image.close()
 
 class ProfileImageHandler(BaseHandler):
-    
+
+    @tornado.web.authenticated
+    @tornado.web.asynchronous
+    @gen.coroutine 
     def get(self,uid):
-            profilepic = ProfileImage.objects(owner=uid).first()
+            profilepic,error = yield gen.Task(CallIT.gen_run,ProfileImageActions.get_image, uid)
             if profilepic == None:
-                 profilepic = ProfileImage.objects(id=uid).first()
-            if profilepic == None:
-                self.finish()
+                self.set_header('Content-Type', 'image/jpg' )
+                self.finish(fbytes)
                 return
             thumbnail = self.get_argument("thumbnail",default=False)
             image = None
@@ -35,7 +41,15 @@ class ProfileImageHandler(BaseHandler):
 
 
 class ProfileImageActions:
-
+    @staticmethod
+    def get_image(uid,callback=None):
+        profilepic = ProfileImage.objects(owner=uid).first()
+        if profilepic == None:
+            profilepic = ProfileImage.objects(id=uid).first()
+        if callback != None:
+            return callback(profilepic)
+        return profilepic
+        
     #image is base64
     @staticmethod
     def save_profile_image(uid,owner,image,callback=None):

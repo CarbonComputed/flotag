@@ -1,11 +1,14 @@
 from handlers.base import RestHandler
 from models.response import ResponseModel
 from models.tag import *
+from models.post import *
 from handlers.user import UserActions
 from handlers.profile_image import ProfileImageActions
 from util.MongoEncoder import *
 from mongoengine import *
+from datetime import date, timedelta
 
+from util.callit import *
 
 from tornado import gen
 import tornado.web
@@ -28,11 +31,11 @@ class TagHandler(RestHandler):
             page = int(self.get_argument("page",strip=True,default=1))
         
             if q:
-                response.model['tags'] = yield gen.Task(TagActions._get_tags_by_freq,q, nresults, page)
+                response.model['tags'],error = yield gen.Task(CallIT.gen_run,TagActions._get_tags_by_freq,q, nresults, page)
             elif tag_id != None:
-                response.model['tags'] = yield gen.Task(TagActions._get_tag_by_id,tag_id)
+                response.model['tags'],error = yield gen.Task(CallIT.gen_run,TagActions._get_tag_by_id,tag_id)
             else:
-                response.model['tags'] = yield gen.Task(TagActions._get_top_tags,nresults, page)
+                response.model['tags'],error = yield gen.Task(CallIT.gen_run,TagActions._get_top_tags,nresults, page)
         except Exception, e:
             response.success = False
             response.args['Message'] = e.message
@@ -50,10 +53,10 @@ class TagHandler(RestHandler):
             tag_model = self.get_json_model("tag")
             
             user = yield gen.Task(UserActions._get_user_by_id,self.current_uid())
-            tag = yield gen.Task(TagActions._create_tag,user, tag_model)
+            tag,error = yield gen.Task(CallIT.gen_run,TagActions._create_tag,user, tag_model)
             response.model['tag'] = tag
             if img != None:
-                pro_img = yield gen.Task(ProfileImageActions.save_profile_image,tag.id, user, img)
+                pro_img,error = yield gen.Task(CallIT.gen_run,ProfileImageActions.save_profile_image,tag.id, user, img)
         except Exception, e:
             if isinstance(tag,Document):
                 tag.delete()
@@ -83,7 +86,44 @@ class TagHandler(RestHandler):
 
     def delete(self,tag_id):
         pass
+
+
+class TrendingTagHandler(RestHandler):
     
+    @tornado.web.asynchronous
+    @gen.coroutine
+    def get(self):
+        response = ResponseModel()
+        try:
+            nresults = int(self.get_argument("nresults",strip=True,default=50))
+            page = int(self.get_argument("page",strip=True,default=1))
+            timeago = int(self.get_argument("timeago", default=80, strip=True))
+            response.model['tags'],error = yield gen.Task(CallIT.gen_run,TagActions._get_tags_by_trend,timeago,nresults, page)
+
+        except Exception, e:
+            response.success = False
+            response.args['Message'] = e.message
+            logger.error(e)
+        self.write_json(response)    
+
+class RandomTagHandler(RestHandler):
+    
+    @tornado.web.asynchronous
+    @gen.coroutine
+    def get(self,tag_id):
+        response = ResponseModel()
+        try:
+            nresults = int(self.get_argument("nresults",strip=True,default=50))
+            page = int(self.get_argument("page",strip=True,default=1))
+            timeago = int(self.get_argument("timeago", default=60, strip=True))
+            response.model['tags'] = yield gen.Task(TagActions._get_tags_by_trend,timeago,nresults, page)
+
+        except Exception, e:
+            response.success = False
+            response.args['Message'] = e.message
+            logger.error(e)
+        self.write_json(response)    
+
 class TagActions:
     
 
@@ -129,7 +169,26 @@ class TagActions:
             tags = Tag.objects(name__istartswith=tag_string).no_dereference().exclude(*excludes).skip(nresults * (page-1)).limit(nresults).order_by('name','-frequency')
             if callback != None:
                 return callback(tags)
-            return tags    
+            return tags   
+
+    @staticmethod
+    def _get_tags_by_trend(hoursago=24,nresults=50,page=1,callback=None):
+        
+        d=datetime.datetime.utcnow( )-timedelta(hours=hoursago)
+        post_coll = Post._get_collection()
+            #excludes = ["reg_id","password","notifications","current_tags","votes","salt","email","date_modified"]
+        tags = post_coll.aggregate(   
+                [
+                 { "$unwind" : "$tags" },
+                 { "$match" :{ "date_created":{ "$gte" : d}, "tags.is_user": False} },
+                 { "$group" : { "_id" : "$tags.tag" , "name" :{ "$first": "$tags.name"}, "number" : { "$sum" : 1 } } },
+                 { "$sort" : { "number" : -1 } },
+                 {"$skip" : (page -1)*nresults},
+                 {"$limit" : nresults}
+                 ]) 
+        if callback != None:
+                return callback(tags['result'])
+        return tags['result']    
                 
     @staticmethod
     def _create_tag(user,tag_model,callback=None):

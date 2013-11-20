@@ -43,7 +43,6 @@
 
     publicMethods = {
         pushTag : function (tag, ignoreEvents) {
-            
             var $self = $(this), opts = $self.data('opts'), alreadyInList, tlisLowerCase, max, tagId,
             tlis = $self.data("tlis"), tlid = $self.data("tlid"), idx, newTagId, newTagRemoveId, escaped,
             html, $el, lastTagId, lastTagObj;
@@ -53,9 +52,9 @@
 
             if (!tag || !tag.name|| tag.name.length <= 0) { return; }
 
-            if (opts.CapitalizeFirstLetter && tag.name.length > 1) {
-                tag.name = tag.name.charAt(0).toUpperCase() + tag.name.slice(1).toLowerCase();
-            }
+            // if (opts.CapitalizeFirstLetter && tag.name.length > 1) {
+            //     tag.name = tag.name.charAt(0).toUpperCase() + tag.name.slice(1).toLowerCase();
+            // }
 
             // call the validator (if any) and do not let the tag pass if invalid
             if (opts.validator && !opts.validator(tag)) { return; }
@@ -66,11 +65,13 @@
             alreadyInList = false;
             //use jQuery.map to make this work in IE8 (pure JS map is JS 1.6 but IE8 only supports JS 1.5)
             tlisLowerCase = jQuery.map(tlis, function(elem) {
-                return elem.name.toLowerCase();
+                return elem._id.$oid.toLowerCase();
             });
+            
+            
+            // tlisLowerCase = tlis;
 
-            idx = $.inArray(tag.name.toLowerCase(), tlisLowerCase);
-
+            idx = $.inArray(tag._id.$oid.toLowerCase(), tlisLowerCase);
             if (-1 !== idx) {
                 // console.log("tag:" + tag + " !!already in list!!");
                 alreadyInList = true;
@@ -107,9 +108,9 @@
                 newTagRemoveId = $self.data("tm_rndid") + '_Remover_' + tagId;
                 escaped = $("<span/>").text(tag.name).html();
 
-                html = '<span class="' + privateMethods.tagClasses.call($self) + '" id="' + newTagId + '">';
+                html = '<span class="'+newTagId+" " + privateMethods.tagClasses.call($self) + '" id="' + newTagId + '">';
                 html+= '<span>' + escaped + '</span>';
-                html+= '<a href="#" class="tm-tag-remove" id="' + newTagRemoveId + '" TagIdToRemove="' + tagId + '">';
+                html+= '<a href="#" class="tm-tag-remove '+newTagRemoveId+'" id="' + newTagRemoveId + '" TagIdToRemove="' + tagId + '">';
                 html+= opts.tagCloseIcon + '</a></span> ';
                 $el = $(html);
 
@@ -118,14 +119,14 @@
                 } else {
                     if (tagId > 1) {
                         lastTagId = tagId - 1;
-                        lastTagObj = $("#" + $self.data("tm_rndid") + "_" + lastTagId);
+                        lastTagObj = $("." + $self.data("tm_rndid") + "_" + lastTagId);
                         lastTagObj.after($el);
                     } else {
                         $self.before($el);
                     }
                 }
 
-                $el.find("#" + newTagRemoveId).on("click", $self, function(e) {
+                $("." + newTagRemoveId).on("click", $self, function(e) {
                     e.preventDefault();
                     var TagIdToRemove = parseInt($(this).attr("TagIdToRemove"));
                     privateMethods.spliceTag.call($self, TagIdToRemove, e.data);
@@ -144,19 +145,18 @@
         },
 
         popTag : function () {
-            var $self = $(this), tagId, tagBeingRemoved,
-            tlis = $self.data("tlis"),
-            tlid = $self.data("tlid");
-
+        var $self = $(this), tlis = $self.data("tlis"), tlid = $self.data("tlid"),tagId,tagBeingRemoved;
+                            
+            console.log($self);
             if (tlid.length > 0) {
               tagId = tlid.pop();
 
               tagBeingRemoved = tlis[tlis.length - 1];
+
               $self.trigger('tm:popping', tagBeingRemoved);
               tlis.pop();
-
               // console.log("TagIdToRemove: " + tagId);
-              $("#" + $self.data("tm_rndid") + "_" + tagId).hide(300,'swing', function(){
+              $("." + $self.data("tm_rndid") + "_" + tagId).hide(300,'swing', function(){
                 this.remove();
                               privateMethods.refreshHiddenTagList.call($self);
               $self.trigger('tm:popped', tagBeingRemoved);
@@ -174,7 +174,7 @@
                 tagId = tlid.pop();
                 tlis.pop();
                 // console.log("TagIdToRemove: " + tagId);
-                $("#" + $self.data("tm_rndid") + "_" + tagId).remove();
+                $("." + $self.data("tm_rndid") + "_" + tagId).remove();
                 privateMethods.refreshHiddenTagList.call($self);
                 // console.log(tlis);
             }
@@ -295,13 +295,12 @@
             var $self = this, tlis = $self.data("tlis"), tlid = $self.data("tlid"), idx = $.inArray(tagId, tlid),
             tagBeingRemoved;
 
-            // console.log("TagIdToRemove: " + tagId);
-            // console.log("position: " + idx);
+
 
             if (-1 !== idx) {
                 tagBeingRemoved = tlis[idx];
                 $self.trigger('tm:splicing', tagBeingRemoved);
-                $("#" + $self.data("tm_rndid") + "_" + tagId).remove();
+                $("." + $self.data("tm_rndid") + "_" + tagId).remove();
                 tlis.splice(idx, 1);
                 tlid.splice(idx, 1);
                 privateMethods.refreshHiddenTagList.call($self);
