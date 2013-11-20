@@ -2062,11 +2062,12 @@ Flotag.IndexController = Ember.ArrayController.extend({
 				}   	
 
 	        });
+
+	        if(unread > 0){
+	        	this.get('index').set('unreadNots',true);
+	        }
 	        if(unread==20){
 	        	return "20+";
-	        }
-	        if(unread > 0){
-	        	this.set('unreadNots',true);
 	        }
 	        return unread;
 	}.property("notifications.@each"),

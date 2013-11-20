@@ -173,7 +173,9 @@
                <ul class="stats">
                   <li class="use-blue">{{currentUser.reputation}} <i class="icon-star"></i></li>
                   <!--   <a class="span4" href="#">32 Tags</a>-->
+                  {{#if currTags}}
                   <li class="use-blue">{{currTags.length}} Tags</li>
+                  {{/if}}
                   <li class="use-blue"><a href="#" {{action "loadFollowers" currentUser._id.$oid target="controller.controllers.base" }} data-toggle="modal" data-target="#followersModal">{{currentUser.frequency}} Following</a></li>
                </ul>
             </div>
@@ -867,12 +869,7 @@
           {{view Flotag.SearchView}}
       </span>
       <span id="drop-bar-nots" class="hide drop-bar-item">
-<!--                 {{#if computedRead}}
 
-                {{#if unreadNots}}
-                  <span class="unread-nots">{{computedRead}}</span>
-                {{/if}}
-                {{/if}}  -->
 
                {{view Flotag.NotificationView}}
       </span>
