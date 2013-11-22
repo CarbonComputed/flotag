@@ -24,6 +24,8 @@ from recaptcha.client import captcha
 
 logger = logging.getLogger(__name__)
 
+
+
 class UserHandlerById(RestHandler):
     
     @tornado.web.authenticated
@@ -43,6 +45,8 @@ class UserHandlerById(RestHandler):
                 raise Exception("Invalid Permissions")
             else:
                 response.model['user'],error = yield gen.Task(CallIT.gen_run,UserActions._get_user_by_id,id,detailed=False,includes=fields)
+                if response.model['user'] == None:
+                    self.set_status(404, "User not found")
         except Exception, e:
             response.success = False
             response.args['Message'] = e.message
@@ -277,6 +281,19 @@ class ReadNotificationHandler(RestHandler):
             response.args['Message'] = e.message
             logger.error(e)
         self.write_json(response)
+
+
+class CheckLoginHandler(RestHandler):
+    
+    @tornado.web.authenticated
+    @tornado.web.asynchronous
+    @gen.coroutine
+    def get(self):
+        response = ResponseModel()
+        response.success = True
+        response.args['Message'] = "Status: OK"
+        self.write_json(response)
+
 
 class UserActions:
 

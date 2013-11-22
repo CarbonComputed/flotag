@@ -120,18 +120,18 @@ class PostActions:
                                     { "$match" : { "tags" : { "$elemMatch" : { "tag" : { "$in" : tags}}}}},
                                     {"$unwind" : "$tags"},
                                     {"$group": {"_id" : "$tags.tag", "name" :{ "$first": "$tags.name"}, "is_user" :{ "$first": "$tags.is_user"},"posts" : {"$addToSet" : {"postid" : "$_id", "content" : "$content",
-        "rank" : "$rank","user" : "$user", "upvotes" : "$upvotes", "downvotes" : "$downvotes", "date_created" : "$date_created", "date_modified" : "$date_modified"
+        "rank" : "$rank","user" : "$user", "reply_count" : "$reply_count", "upvotes" : "$upvotes", "downvotes" : "$downvotes", "date_created" : "$date_created", "date_modified" : "$date_modified"
         }},
                                     "trank" : {"$max" : "$rank"}}},
 
     {"$unwind" : "$posts"},
-    {"$project":{ "_id" : "$posts.postid", "rank" : "$posts.rank", "content" : "$posts.content", "user" : "$posts.user", "tag" : {"id" :"$_id","name" : "$name" ,"is_user" : "$is_user"},
+    {"$project":{ "_id" : "$posts.postid", "rank" : "$posts.rank", "content" : "$posts.content","reply_count": "$posts.reply_count", "user" : "$posts.user", "tag" : {"id" :"$_id","name" : "$name" ,"is_user" : "$is_user"},
     "upvotes" : "$posts.upvotes", "downvotes" : "$posts.downvotes", "date_created" : "$posts.date_created", "date_modified" : "$posts.date_modified",
         "erank" : {"$divide" : ["$posts.rank","$trank"]}}},
      
        {"$group" : {"_id" : "$_id","tags" : {"$addToSet" : { "tag" : "$tag.id","name": "$tag.name","is_user" : "$tag.is_user"
         }},"erank" : {"$max" : "$erank"
-        },"content" :{"$first" : "$content"},"rank" :{"$first" : "$rank"},"user" :{"$first" : "$user"},
+        },"content" :{"$first" : "$content"},"rank" :{"$first" : "$rank"},"user" :{"$first" : "$user"},"reply_count" : {"$first" : "$reply_count"},
         "upvotes" : {"$first" : "$upvotes"}, "downvotes" : {"$first" : "$downvotes"}, "date_created" : {"$first" : "$date_created"}
         , "date_modified" :{"$first": "$date_modified"}
         }},

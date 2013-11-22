@@ -227,10 +227,16 @@ class Scraper:
             if not og_title or not og_title['content']:
                 if self.soup.title:
                     link_data['title'] = self.soup.title.string
-            og_description = self.soup.find('meta', property='og:description')
-            #print og_description
+            og_description = self.soup.find(attrs={"name":"og:description"})
+            if not og_description or len(og_description['content']) < 1:
+                og_description = self.soup.find(attrs={"name":"description"})
             if og_description and og_description['content']:
                 link_data['description'] = og_description['content']
+            link_data['image'] = None
+            og_image = self.soup.find(attrs={"name":"og:image"})
+            if og_image and og_image['content']:
+                    link_data['image'] = og_image['content']
+
         link_data['content-type'] = self.content_type
         return link_data
 
@@ -397,6 +403,7 @@ class YoutubeScraper(MediaScraper):
 
     def video_id_extract(self):
         vid = self.video_id_rx.match(self.url)
+        video_id = None
         if(vid):
             video_id = vid.groups()[0]
         d = self.video_deeplink_rx.match(self.url)
@@ -473,17 +480,18 @@ class VimeoScraper(MediaScraper):
     domains = ['vimeo.com']
     height = 448
     width = 520
-    media_template = '<embed src="$video_id" width="520" height="448" wmode="transparent" pluginspage="http://www.macromedia.com/go/getflashplayer" type="application/x-shockwave-flash"> </embed>'
+    media_template = '<iframe src="$video_id" width="520" height="428" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>'
+#     media_template = '<embed src="$video_id" width="520" height="448" wmode="transparent" pluginspage="http://www.macromedia.com/go/getflashplayer" type="application/x-shockwave-flash"> </embed>'
     video_id_rx = re.compile('.*/(.*)')
 
     def media_object(self):
         if not self.soup:
             self.download()
-
         if self.soup:
-            f = self.soup.find('link', rel = 'video_src')
+            f = self.soup.find(attrs={"name":"twitter:player"})
+            print f
             if f:
-                video_url =  f['href']
+                video_url =  f['content']
             else:
                 video_url=None
 
@@ -1932,7 +1940,6 @@ class Link(object):
 
 def get_link(url,callback = None):
     h = make_scraper(url)
-    img = h.largest_image_url()
     
     data = h.link_data()
     mo = h.media_object()
@@ -1943,9 +1950,11 @@ def get_link(url,callback = None):
     mec = None
     if me != None:
         mec = me.content
+    img = data.get('image',None)
     link = Link(url,img,mec,None,data)
     link.data['embed'] = link.embed
-    link.data['image'] = link.image
+    if img == None:
+        link.data['image'] = h.largest_image_url()
     if callback != None:
         return callback(link)
     return link

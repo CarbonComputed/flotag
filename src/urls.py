@@ -28,7 +28,8 @@ url_patterns = [
                 (r'/api/unauthorized',handlers.base.UnauthorizedHandler),
                 (r'/api/search',handlers.search.SearchHandler),
                 (r'/api/password',handlers.auth.PasswordChangeHandler),
-                (r'/api/verify/?',handlers.auth.EmailConfirmHandler)
+                (r'/api/verify/?',handlers.auth.EmailConfirmHandler),
+                (r'/api/auth/check',handlers.user.CheckLoginHandler)
                 
                               
 ]

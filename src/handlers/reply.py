@@ -132,6 +132,7 @@ class ReplyActions:
         start = ((page-1) * nresults)
         end = (((page-1) * nresults)+nresults)
         replies = replies[start:end]
+
         if callback != None:
             return callback(replies)
         return replies
@@ -144,6 +145,7 @@ class ReplyActions:
         reply.rank = util.ranking.confidence(1, 0)
         reply.username = user.username
         Post.objects(id=post_id).first().update(push__replies=reply)
+        Post.objects(id=post_id).first().update(inc__reply_count=1)
         user.reload()
         user.votes.append(Vote(post_id=reply.id,state=1))
         user.save()
@@ -160,6 +162,7 @@ class ReplyActions:
         if replies[0].user.id != user.id:
             raise Exception("Thats not your reply")
         replies[0].content = "[reply deleted]"
+        post.update(update(dec__reply_count=1))
         post.save()
         if callback != None:
             return callback(replies[0])

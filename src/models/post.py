@@ -11,9 +11,11 @@ class Post(Document):
     upvotes = IntField(default=1)
     downvotes = IntField(default=0)
     rank = FloatField(default=0)
+    reply_count =  IntField(default=0)
     replies = ListField(EmbeddedDocumentField('Reply'),default=[])
     date_created = DateTimeField(default=datetime.datetime.utcnow)
     date_modified = DateTimeField(default=datetime.datetime.utcnow)
+    
 
 class Reply(EmbeddedDocument):
     id = ObjectIdField(default=ObjectId)

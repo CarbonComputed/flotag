@@ -28,7 +28,7 @@
 }
 .tm-tag .tm-tag-remove:hover {
   color: #000000;
-  text-decoration: none;
+  text-decoration: underline;
   opacity: 0.4;
 }
 .tm-tag.tm-tag-warning {

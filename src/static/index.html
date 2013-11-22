@@ -186,7 +186,11 @@
          <button class="btn btn-primary btn-lg left-btn" data-toggle="modal" data-target="#postpostModal">Write a Post!
       </button>
          <button id="create-tag-button" href="#myModal" role="button" data-toggle="modal" class="btn btn-lg btn-primary">Create a tag!</button>
-
+          <div class="hidden-sm hidden-xs">
+          <span class="tm-tag tm-tag-info"></span>= User<br/>
+          <span class="tm-tag tm-tag-success"></span>= Tag<br/>
+          <span class="tm-tag tm-tag-warning"></span>= Untagged<br/>
+          </div>
       </div>
       <div class="col-md-7" id="midCol" >
          <div id="alert" class="alert">
@@ -274,7 +278,7 @@
   <span id="currentTagCont"></span>
             <input type="text" id="current-tags" name="typeahead-current-tags"
                placeholder="Tags"
-               class="tm-input tm-input-success  typeahead-current-tags form-control" /> 
+               class="tm-input  typeahead-current-tags form-control" /> 
                <br>
 </script>
 
@@ -303,20 +307,35 @@
 
              <input id="post-tags" type="text" name="typeahead-post-tags" placeholder="Tags (Max 1 per post)" class="tm-input tm-input-success typeahead-post-tags form-control" />
              </form>
+               <div id="postPreview" >
+
+                         {{#if view.data}}
+
+                {{preview-comp data=view.data}}
+             {{/if}}
+             </div>
+             {{#if view.previewLoading}}
+                <img id="ajax-loader_reply" width="50" style="margin-top:15px;margin-right:20px;" src="/images/ajax-loader_nav_white.gif" >
+
+             {{/if}}
+ 
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+        <button {{action "post" this target="posts"}} type="button" class="btn btn-primary">Post!</button>
+              <br/><br/>
              <div class="well">
              <p class="btn-inline" style="margin-right:5px;font-size:12px;color: gray;">Can't find a tag you would like to use?</p>
               <button href="#myModal" role="button" data-toggle="modal" class="btn btn-sm btn-primary btn-inline">Create a tag!</button>
 
              </div>
       </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-        <button {{action "post" this target="posts"}} type="button" class="btn btn-primary">Post!</button>
-      </div>
     </div><!-- /.modal-content -->
   </div><!-- /.modal-dialog -->
 </div>
 </script>
+
 
 
 
@@ -448,7 +467,7 @@
                   placeholder="Write a Post"></textarea>
                <br/>
                <span id="postTagCont">
-               <span class="tm-tag tm-tag-info">{{name}}</span>
+               <span class="tm-tag tm-tag-success">{{name}}</span>
                </span>
                <button {{action "post" this}} type="button" class="btn btn-primary pull-right" id="postBtn">Post!</button>
             </form>
@@ -499,7 +518,7 @@
 <script type='text/x-handlebars' data-template-name="load-more-view">
 
     
-    <img id="ajax-loader" width="50" src="/images/ajax-loader.gif" >
+    <!-- <img id="ajax-loader" width="50" src="/images/ajax-loader.gif" > -->
 
 
 
@@ -518,7 +537,7 @@
    
                {{#unless previewHidden}}
                {{#if isImageLink}}    
-               <img {{bindAttr src="image"}}>
+               <a {{bindAttr href="image"}}> <img class="preview-img" {{bindAttr src="image"}}></a>
                {{/if}}
                {{#if isVideoLink}}
                <div class="videoWrapper">
@@ -566,7 +585,7 @@
                   <a type="button" class="btn btn-sm numvotes">{{sub upvotes downvotes}}</a>
                   <a {{action "downvote" this }} type="button" {{bind-attr class=":btn :btn-sm :btn-default downvoted"}}><i class="icon-chevron-down"></i></a>
                   <a {{action "toggleReplying" this}} type="button" class="btn btn-sm btn-default"><i class="icon-reply"></i>Reply</a>
-                  <a {{action "toggleReplies" this}} type="button" class="btn btn-sm btn-default"><i {{bind-attr class="repliesHidden:icon-double-angle-down:icon-double-angle-up"}}></i></a>
+                  <a {{action "toggleReplies" this}} type="button" class="btn btn-sm btn-default">{{reply_count}} <i class="icon-comments"></i>  <i {{bind-attr class=""}}></i></a>
                   <!--              <button type="button" class="btn"><i class="icon-film icon-large use-blue"> Play Video +</i></button>           
                      -->        
                   {{#if previewHidden}}
@@ -599,10 +618,18 @@
               {{#if repliesLoaded}}
                <div class="replies">
                   {{render "treeBranch" replyTree }}
-                  </div>
+                  {{#if canLoadMoreReplies}}
+                      <a class="load-more btn"{{action "loadMoreReplies"}}>Load More Replies</a>
+                  {{else}}
+                      <i>no more items</i>
+                  {{/if}}
+                </div>
               {{/if}}
               
             {{/unless}}
+            {{#if repliesLoading}}
+                <img id="ajax-loader_reply" width="50" style="margin-top:15px;margin-right:20px;" src="/images/ajax-loader_nav_white.gif" >
+            {{/if}}
 </div>
 </script>
 
@@ -875,10 +902,10 @@
       </span>
        <span id="drop-bar-settings" class="hide drop-bar-item">
        <ul>
-          <li><a data-toggle="modal" data-target="#changePassModal" href="#">Change Password</a></li>
-          <li><a {{action "toggleEditView" target="base"}} data-toggle="modal" data-target="#editModal" href="#" href="#">Edit Profile</a>
+          <li><a data-toggle="modal" data-target="#changePassModal" href="#"><i class="icon-shield"></i> Change Password</a></li>
+          <li><a {{action "toggleEditView" target="base"}} data-toggle="modal" data-target="#editModal" href="#" href="#"><i class="icon-pencil"></i> Edit Profile</a>
           </li>
-          <li><a href="/#/logout">Logout</a></li>
+          <li><a href="/#/logout"><i class="icon-power-off"></i> Logout</a></li>
        </ul>
       </span>
    </span>
@@ -930,10 +957,10 @@
                   <i class="icon-cogs icon-large use-blue"></i>
                 </a>
               <ul class="dropdown-menu">
-                <li><a data-toggle="modal" data-target="#changePassModal" href="#">Change Password</a></li>
-                <li><a {{action "toggleEditView" target="base"}} data-toggle="modal" data-target="#editModal" href="#" href="#">Edit Profile</a>
+                <li><a data-toggle="modal" data-target="#changePassModal" href="#"><i class="icon-shield"></i> Change Password</a></li>
+                <li><a {{action "toggleEditView" target="base"}} data-toggle="modal" data-target="#editModal" href="#" href="#"><i class="icon-pencil"></i> Edit Profile</a>
                 </li>
-                <li><a href="/#/logout">Logout</a></li>
+                <li><a href="/#/logout"><i class="icon-power-off"></i> Logout</a></li>
               </ul>
               </li>
             </div>
@@ -970,15 +997,16 @@
 
 </script>
 <script type="text/x-handlebars" id="components/preview-comp">
-        <a {{bindAttr href="data.link"}} >
-         <div class="tm-tag">
+        <div class="preview-component" >
+        <a style="margin:10px 10px 10px 10px;" {{bindAttr href="data.link"}} >
+         <div class="well preview-box" style="margin:0px 10px 0px 10px;">
             
 
             <div>
                   {{#if data.image}}
 
-                  <img class="profile-image"
-                  {{bindAttr src="data.image"}} width=150; height=150;>
+                  <img class="profile-image img-responsive" style="height:90px;" 
+                  {{bindAttr src="data.image"}} >
                   {{/if}}
                   <span>
                   <h4 class="name use-blue">{{data.title}}</h4><br/>
@@ -988,6 +1016,7 @@
             </div>
             </div>
         </a>
+        </div>
       
         
         
@@ -1039,7 +1068,7 @@
         <div class="followers">
           {{#if followers.isLoaded}}
           {{#each followers}}
-            {{user-list-view-comp user=this}}
+            {{user-list-view user=this}}
             <br/>
           {{/each}}
           {{else}}
@@ -1057,15 +1086,17 @@
 </div>
 </script>
 
-<script type="text/x-handlebars" id="components/user-list-view-comp">
+<script type="text/x-handlebars" data-template-name="components/user-list-view">
+   <a {{action "urlClick" user._id.$oid}} class="lst-item-link">
    <div class="lst-item">
    <img class="lst-img pull-left img-responsive" {{bindAttr src="user.userProfileImage"}} width="50" height="50"> 
-   <div class="lst-info">
-     <p>{{user.name}}</p>
-     <p>{{user.username}}</p>
-     <p>{{user.about}}</p>
+     <div class="lst-info">
+       <p>{{user.name}}</p>
+       <p>{{user.username}}</p>
+       <p>{{user.about}}</p>
+     </div>
    </div>
-   </div>
+   </a>
 </script>
 
 </body>

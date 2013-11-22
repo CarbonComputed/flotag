@@ -36,6 +36,8 @@ class TagHandler(RestHandler):
                 response.model['tags'],error = yield gen.Task(CallIT.gen_run,TagActions._get_tag_by_id,tag_id)
             else:
                 response.model['tags'],error = yield gen.Task(CallIT.gen_run,TagActions._get_top_tags,nresults, page)
+            if not response.model['tags']:
+                self.set_status(404, "Tag not found")
         except Exception, e:
             response.success = False
             response.args['Message'] = e.message

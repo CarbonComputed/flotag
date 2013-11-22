@@ -35,7 +35,7 @@
         output: null,
         deleteTagsOnBackspace: true,    // deprecated
         tagsContainer: null,
-        tagCloseIcon: 'x',
+        tagCloseIcon: 'X',
         tagClass: '',
         validator: null,
         onlyTagList: false
@@ -101,19 +101,28 @@
                             $.post(opts.AjaxPush, $.extend({tag: tag}, opts.AjaxPushParameters));
                         }
                     }
-
+                var url ="";
                 // console.log("tagList: " + tlis);
+                if(tag._cls == "Tag.User"){
+                    url = "\"/#/user/"+tag._id.$oid+"\"";
+                }
+                else{
+                    url = "\"/#/tag/"+tag._id.$oid+"\"";
+                }
 
+                var linkTag = "<a class=\"tag-link\"href="+url+"> ";
+
+                
                 newTagId = $self.data("tm_rndid") + '_' + tagId;
                 newTagRemoveId = $self.data("tm_rndid") + '_Remover_' + tagId;
                 escaped = $("<span/>").text(tag.name).html();
-
-                html = '<span class="'+newTagId+" " + privateMethods.tagClasses.call($self) + '" id="' + newTagId + '">';
+                html = linkTag;
+                html += '<span class="'+newTagId+" " + privateMethods.tagClasses.call($self,tag) + '" id="' + newTagId + '">';
                 html+= '<span>' + escaped + '</span>';
-                html+= '<a href="#" class="tm-tag-remove '+newTagRemoveId+'" id="' + newTagRemoveId + '" TagIdToRemove="' + tagId + '">';
-                html+= opts.tagCloseIcon + '</a></span> ';
+                html+= '<span class="tm-tag-remove '+newTagRemoveId+'" id="' + newTagRemoveId + '" TagIdToRemove="' + tagId + '">';
+                html+= opts.tagCloseIcon + '</span></span></a> ';
                 $el = $(html);
-
+               
                 if (opts.tagsContainer !== null) {
                     $(opts.tagsContainer).append($el);
                 } else {
@@ -147,7 +156,7 @@
         popTag : function () {
         var $self = $(this), tlis = $self.data("tlis"), tlid = $self.data("tlid"),tagId,tagBeingRemoved;
                             
-            console.log($self);
+            
             if (tlid.length > 0) {
               tagId = tlid.pop();
 
@@ -219,7 +228,8 @@
             }
         },
 
-        tagClasses : function () {
+        tagClasses : function (tag) {
+            
             var $self = $(this), opts = $self.data('opts'), tagBaseClass = opts.tagBaseClass,
             inputBaseClass = opts.inputBaseClass, cl;
             // 1) default class (tm-tag)
@@ -232,6 +242,14 @@
                     }
                 });
             }
+            if(tag._cls == "Tag.User"){
+                cl += " tm-tag-info";
+            }
+            else{
+                cl += " tm-tag-success";
+
+            }
+
             // 3) tags from tagClass option
             cl += (opts.tagClass ? ' ' + opts.tagClass : '');
             return cl;
