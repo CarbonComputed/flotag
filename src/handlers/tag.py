@@ -29,9 +29,12 @@ class TagHandler(RestHandler):
         try:
             nresults = int(self.get_argument("nresults",strip=True,default=50))
             page = int(self.get_argument("page",strip=True,default=1))
+            tagids = self.get_argument("tag_ids",strip=True,default=False)
         
             if q:
                 response.model['tags'],error = yield gen.Task(CallIT.gen_run,TagActions._get_tags_by_freq,q, nresults, page)
+            elif tagids:
+                response.model['tags'],error = yield gen.Task(CallIT.gen_run,TagActions._get_tags_by_ids,tagids)
             elif tag_id != None:
                 response.model['tags'],error = yield gen.Task(CallIT.gen_run,TagActions._get_tag_by_id,tag_id)
             else:
@@ -75,11 +78,13 @@ class TagHandler(RestHandler):
     def put(self,tag_id):
         response = ResponseModel()
         try:
+            img = self.get_json_model("profile_img",default=None)
+            user = yield gen.Task(UserActions._get_me_by_id,self.current_uid())
             tag = yield gen.Task(TagActions._get_tag_by_id,tag_id)
             tag_model = self.get_json_model("tag")
-
-            user = yield gen.Task(UserActions._get_user_by_id,self.current_uid())
             response.model['tag'] = yield gen.Task(TagActions._update_tag,user, tag,tag_model)
+            if img != None:
+                yield gen.Task(ProfileImageActions.save_profile_image,tag.id,user, img)
         except Exception, e:
             response.success = False
             response.args['Message'] = e.message
@@ -101,6 +106,24 @@ class TrendingTagHandler(RestHandler):
             page = int(self.get_argument("page",strip=True,default=1))
             timeago = int(self.get_argument("timeago", default=80, strip=True))
             response.model['tags'],error = yield gen.Task(CallIT.gen_run,TagActions._get_tags_by_trend,timeago,nresults, page)
+
+        except Exception, e:
+            response.success = False
+            response.args['Message'] = e.message
+            logger.error(e)
+        self.write_json(response)    
+
+class OwnerTagHandler(RestHandler):
+
+    @tornado.web.authenticated
+    @tornado.web.asynchronous
+    @gen.coroutine
+    def get(self):
+        response = ResponseModel()
+        try:
+            nresults = int(self.get_argument("nresults",strip=True,default=50))
+            page = int(self.get_argument("page",strip=True,default=1))
+            response.model['tags'],error = yield gen.Task(CallIT.gen_run,TagActions._get_tags_by_owner,self.current_uid(),nresults, page)
 
         except Exception, e:
             response.success = False
@@ -150,6 +173,29 @@ class TagActions:
             if callback != None:
                 return callback(tag)
             return tag
+
+    @staticmethod
+    def _get_tags_by_ids(_ids,deref=True,excludes=None,includes=None,callback=None):
+            if includes == None:
+                includes = []
+            if excludes == None:
+                excludes = ["reg_id","password","notifications","current_tags","votes","salt","email","date_modified"]
+            #excludes.extend(["owner"])
+            
+            tags = None
+            _ids = loads(_ids)
+
+            if deref:
+                tags = Tag.objects(id__in=_ids).exclude(*excludes).only(*includes)
+#                 print tag.to_json()
+#                 print dumps(tag.owner)
+#                 print tag.owner.name
+            else:
+                tags = Tag.objects(id__in=_ids).exclude(*excludes).only(*includes)
+            print tags
+            if callback != None:
+                return callback(tags)
+            return tags
                 
     @staticmethod
     def _get_recommended_tags(user,tag_string,callback=None):
@@ -162,13 +208,22 @@ class TagActions:
             tags = Tag.objects().no_dereference().exclude(*excludes).skip(nresults * (page-1)).limit(nresults).order_by('-frequency')
             if callback != None:
                 return callback(tags)
+            return tags
+
+    @staticmethod
+    def _get_tags_by_owner(ownerid,nresults=50,page=1,callback=None):
+            excludes = ["reg_id","password","notifications","current_tags","votes","salt","email","date_modified"]
+
+            tags = Tag.objects(owner=ownerid).no_dereference().exclude(*excludes).skip(nresults * (page-1)).limit(nresults).order_by('-frequency')
+            if callback != None:
+                return callback(tags)
             return tags    
         
     @staticmethod
     def _get_tags_by_freq(tag_string,nresults=50,page=1,callback=None):
             excludes = ["reg_id","password","notifications","current_tags","votes","salt","email","date_modified"]
 
-            tags = Tag.objects(name__istartswith=tag_string).no_dereference().exclude(*excludes).skip(nresults * (page-1)).limit(nresults).order_by('name','-frequency')
+            tags = Tag.objects(Q(name__istartswith=tag_string)|Q(username__istartswith=tag_string)).no_dereference().exclude(*excludes).skip(nresults * (page-1)).limit(nresults).order_by('username','name','-frequency')
             if callback != None:
                 return callback(tags)
             return tags   
@@ -205,16 +260,8 @@ class TagActions:
     @staticmethod
     def _update_tag(user,tag,tag_model,callback=None):
         if tag.owner.id == user.id:
-            tag_model = TagActions._clean_tag_json(tag_model)
-            for k, v in tag_model.items():
-                if k == '_id' : continue
-                if v == None: continue
-                if k not in ['name','about']: continue
-                field = tag._fields[k]
-    
-                if isinstance(field, ReferenceField):
-                    v = DBRef(field.document_type._get_collection_name(), ObjectId(v))
-                setattr(tag,k, v)
+#             tag_model = TagActions._clean_tag_json(tag_model)
+            tag.about = tag_model['about']
 #             print dumps(tag)
             tag.date_modified = datetime.datetime.now()
             tag.save()

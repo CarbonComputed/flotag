@@ -85,8 +85,8 @@ class VoteActions:
             post.save()
             post.reload()
             post.rank = util.ranking.hot(post.upvotes,post.downvotes,post.date_created)
-            print post.upvotes,post.downvotes,post.date_created
-
+            if post.rank == 0:
+                post.rank = 1
             post.save()
             user.save()
             if callback != None:
@@ -113,10 +113,11 @@ class VoteActions:
                 vote.state = 0
                 post.update(dec__upvotes=1)
                 post.user.update(dec__reputation=2)
-            print post.upvotes,post.downvotes,post.date_created
             post.save()
             post.reload()
             post.rank = util.ranking.hot(post.upvotes,post.downvotes,post.date_created)
+            if post.rank == 0:
+                post.rank = 1
             post.save()
             user.save()
             if callback != None:

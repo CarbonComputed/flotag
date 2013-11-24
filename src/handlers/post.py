@@ -122,7 +122,7 @@ class PostActions:
                                     {"$group": {"_id" : "$tags.tag", "name" :{ "$first": "$tags.name"}, "is_user" :{ "$first": "$tags.is_user"},"posts" : {"$addToSet" : {"postid" : "$_id", "content" : "$content",
         "rank" : "$rank","user" : "$user", "reply_count" : "$reply_count", "upvotes" : "$upvotes", "downvotes" : "$downvotes", "date_created" : "$date_created", "date_modified" : "$date_modified"
         }},
-                                    "trank" : {"$max" : "$rank"}}},
+                                    "trank" : {"$max" :   "$rank"}}},
 
     {"$unwind" : "$posts"},
     {"$project":{ "_id" : "$posts.postid", "rank" : "$posts.rank", "content" : "$posts.content","reply_count": "$posts.reply_count", "user" : "$posts.user", "tag" : {"id" :"$_id","name" : "$name" ,"is_user" : "$is_user"},
@@ -153,6 +153,8 @@ class PostActions:
             post.content = post_model['content']
             post.user = user
             post.rank = util.ranking.hot(1,0,post.date_created)
+            if post.rank == 0:
+                post.rank = 1
             ptags = tags
             tags = Tag.objects(id__in=tags)
             

@@ -705,6 +705,11 @@ width:32px;
 #settings-cog{
 	padding-right: 30px;
 padding-top: 15px;
+cursor: pointer;
+}
+
+#settings-cog:hover i{
+	background: gray;
 }
 
 .reply-btns{
@@ -934,6 +939,7 @@ input{
 .lst-item:hover{
 	background: #F0F0F0;
 	width: 100%;
+	cursor: pointer;
 
 }
 .lst-item p{
@@ -961,4 +967,17 @@ margin: 10px 10px 10px 10px;
 	zoom: 0.75;
 	margin-bottom: -40px;
 	margin-top: -20px;
+}
+
+.scroll-modal-body{
+	height: 300px;
+	overflow: scroll;
+}
+
+.tag-edit-button{
+	display: none;
+}
+
+.lst-item:hover .tag-edit-button{
+	display: inline-block;
 }

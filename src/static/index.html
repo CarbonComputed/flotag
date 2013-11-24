@@ -93,6 +93,7 @@
 
 
 <script type="text/x-handlebars" data-template-name="login">
+{{log "here"}}
   <nav class="navbar navbar-default" style="border: none;border-radius:0px;">
         <a class="navbar-brand " href="#"><img class="logo"
           src="/images/flotag_dark.png"></a>
@@ -117,12 +118,7 @@
 					  <label class="control-label" for="inputPassword">Password</label>
 					  
 					  {{input value=password type="password" placeholder="Password" class="form-control"}}
-<!-- 					  <div class="checkbox">
-					    <label>
-					      {{input type="checkbox"}} Remember Me
 
-					    </label>
-					  </div> -->
             <button style="margin-top: 5px;" type="submit" class="btn btn-primary" >Sign in</button>
 					</form>
 					<h3>Or</h3>
@@ -165,7 +161,7 @@
          <div class="tm-tag mini-profile">
             <div class="">
                {{#link-to 'user' currentUser._id.$oid}}
-                 <img class="profile-image" {{bindAttr src="controllers.application.profileImgUrl"}} width="50" height="50">
+                 <img class="profile-image" {{bindAttr src="controllers.authenticated.profileImgUrl"}} width="50" height="50">
                  <h4 class="name use-blue">{{currentUser.name}}</h4>
                {{/link-to}}
             </div>
@@ -224,6 +220,7 @@
          {{view Flotag.CreateTagView}}
          {{view Flotag.ChangePassView}}
          {{view Flotag.EditProfileView}}
+         {{view Flotag.TagsManagerView}}
 
         
         {{follower-comp user=currentUser followers=controllers.base.followers}}
@@ -235,7 +232,15 @@
          </div>
          <div class="trending-tags">
             <h4>Trending Tags</h4>
-            <p>Most used tags in the last {{trendingTime}} hours.</p>
+            <p>Most used tags in the last {{#if Flotag.isEditing}}
+  {{view Flotag.InlineTextField  valueBinding="trendingTime"}}
+{{else}}
+  {{#view Flotag.TextView}}
+    <span title="Double click to edit">
+    {{trendingTime}}    
+    </span>
+  {{/view}}
+{{/if}} hours.</p>
             {{#if trendingTags}}
             {{#with currentUser as currentUser}} 
             {{#each trendingTags}}
@@ -413,6 +418,8 @@
             {{view Flotag.CreateTagView}}
             {{view Flotag.ChangePassView}}
             {{view Flotag.EditProfileView}}
+            {{view Flotag.TagsManagerView}}
+
             {{follower-comp user=this followers=controllers.base.followers}}
 
          </div>
@@ -491,6 +498,8 @@
             {{view Flotag.CreateTagView}}
             {{view Flotag.ChangePassView}}
             {{view Flotag.EditProfileView}}
+            {{view Flotag.TagsManagerView}}
+
             {{follower-comp user=this followers=controllers.base.followers}}
 
          </div>
@@ -693,7 +702,7 @@
   <div class="modal-body">
           <div id="modal-alert" class="alert ">
                 <button type="button" class="close" data-dismiss="alert">&times;</button>
-                <h4>Incorrect Login info.</h4> 
+                <h4></h4> 
                 
             </div>
 
@@ -735,6 +744,56 @@
 </div>
 </script>
 
+<script type="text/x-handlebars" id="components/edit-tag">
+  <div id="editTagModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="editTagModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+  <div class="modal-content">
+  <div class="modal-header">
+
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+  <div class="preview-image pull-right">
+    </div>
+    <h3 id="editTagLabel" class="tm-tag tm-tag-success tm-tag-large">{{tag.name}}</h3>
+  <p>{{view.tagAboutInput}}</p>
+  </div>
+  <div class="modal-body">
+          <div id="edit-tag-modal-alert" class="alert ">
+                <button type="button" class="close" data-dismiss="alert">&times;</button>
+                <h4></h4> 
+                
+            </div>
+
+          <div class="fileupload fileupload-new" style="padding-right:20px;" data-provides="fileupload">
+
+        <div class="control-group">
+              <label>Tag Image</label><br/>
+
+                <div class="fileupload-new thumbnail" style="width: 85px; height: 85px;"><img  {{bindAttr src="tag.tagProfileImage"}} /></div>
+
+                <div class="fileupload-preview fileupload-exists thumbnail" style="max-width: 85px; max-height: 85px; line-height: 20px;"></div>
+
+          <span class="btn btn-file btn-default"><span class="fileupload-new">Select image</span><span class="fileupload-exists">Change</span><input  type="file" /></span>
+          <a href="#" class="btn fileupload-exists" data-dismiss="fileupload">Remove</a>
+        </div>
+      </div> 
+        <div class="control-group">
+          <label class="control-label" for="inputUsername">Description</label>
+          <div class="controls">
+            {{textarea maxlength="200" class="form-control" valueBinding="view.tagAboutInput"}}
+          </div>
+        </div>
+ 
+    
+  </div>
+  <div class="modal-footer">
+    <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+    <button {{action "saveTag"}} class="btn btn-primary">Save changes</button>
+  </div>
+</div>
+</div>
+</div>
+</script>
+
 <script type="text/x-handlebars" data-template-name="change-pass-view">
   <div id="changePassModal"  class="modal fade" tabindex="-1" role="dialog" aria-labelledby="changePassModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -744,7 +803,7 @@
   </div>
   <div class="modal-body">
         <div id="pw-modal-alert" class="alert a-hide">
-                <button type="button" class="close" data-dismiss="alert">&times;</button>
+    <button type="button" {{action "hideEditView" target="view"}} class="close" data-dismiss="modal" aria-hidden="true">×</button>
                  <h4></h4> 
                 
         </div>
@@ -779,6 +838,55 @@
 </div>
 </script>
 
+<script type="text/x-handlebars" data-template-name="tags-manager-view">
+  <div id="tagsManagerModal"  class="modal fade" tabindex="-1" role="dialog" aria-labelledby="tagsManagerLabel" aria-hidden="true">
+    <div class="modal-dialog">
+  <div class="modal-content">
+  <div class="modal-header">
+    <button type="button" {{action "hideEditView" target="view"}} class="close" data-dismiss="modal" aria-hidden="true">×</button>
+
+    <h3>Tags I've Created</h3>
+        <div id="tags-manager-alert" class="alert a-hide">
+    <button type="button" {{action "hideEditView" target="view"}} class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                 <h4></h4> 
+                
+        </div>
+  </div>
+  <div id="tagsManagerModalBody"class="modal-body scroll-modal-body">
+        <div class="owner-tags">
+          {{#if controllers.base.ownerTags.isLoaded}}
+          {{#each controllers.base.ownerTags}}
+
+               <div class="lst-item">
+               <button {{action "editClicked" this target="view"}} class="btn btn-default pull-right tag-edit-button">Edit</button>
+               <a {{action "urlClick" _id.$oid target="view" }} class="lst-item-link">
+
+               <img class="lst-img pull-left img-responsive" {{bindAttr src="tagProfileImage"}} width="50" height="50"> 
+                 <div class="lst-info">
+                   <p>{{name}}</p>
+                   <p>{{about}}</p>
+                 </div>
+                </a>
+
+               </div>
+            <br/>
+          {{/each}}
+          {{else}}
+             <img id="ajax-loader_nav" width="35" style="margin-top:15px;margin-right:20px;" src="/images/ajax-loader_nav_white.gif" >
+
+          {{/if}}
+        </div>
+
+    
+  </div>
+  <div class="modal-footer">
+    <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+  </div>
+</div>
+</div>
+</div>
+</script>
+
 <script type="text/x-handlebars" data-template-name="edit-profile-view">
   <div id="editModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="editModalLabel" aria-hidden="true">
   <div class="modal-dialog">
@@ -799,7 +907,7 @@
         <div class="control-group">
               <label>Profile Image</label><br/>
 
-                <div class="fileupload-new thumbnail" style="width: 85px; height: 85px;"><img  {{bindAttr src="controllers.application.profileImgUrl"}}
+                <div class="fileupload-new thumbnail" style="width: 85px; height: 85px;"><img  {{bindAttr src="controllers.authenticated.profileImgUrl"}}
  /></div>
 
                 <div class="fileupload-preview fileupload-exists thumbnail" style="max-width: 85px; max-height: 85px; line-height: 20px;"></div>
@@ -832,6 +940,8 @@
 </div>
 </div>
 </script>
+
+
 
 <script type="text/x-handlebars" data-template-name="notification-view">
 <div class="arrow-up"></div>
@@ -883,11 +993,15 @@
 
 <script type="text/x-handlebars" data-template-name='_nav_bar'>
 <nav class="navbar navbar-default navbar-fixed-top" role="navigation">
+
     {{view Flotag.MobileNavView}}
 
    <div class="navbar-header">
       <a class="navbar-brand " href="#"><img class="logo"
          src="/images/flotag_dark.png"></a>
+            {{#if controllers.application.isLoading}}
+            <img id="ajax-loader_nav" class="hidden-md hidden-lg" width="15" style="margin-top:20px;margin-right:0px;" src="/images/ajax-loader_nav.gif" >
+            {{/if}}
    </div>
 
    <span id="drop-bar" class="hide navbar-toggle">
@@ -902,6 +1016,8 @@
       </span>
        <span id="drop-bar-settings" class="hide drop-bar-item">
        <ul>
+          <li><a {{action "loadOwnerTags" target="controller.controllers.base" }} data-toggle="modal" data-target="#tagsManagerModal" href="#" href="#"><i class="icon-tags"></i> My Tags</a>
+          </li>
           <li><a data-toggle="modal" data-target="#changePassModal" href="#"><i class="icon-shield"></i> Change Password</a></li>
           <li><a {{action "toggleEditView" target="base"}} data-toggle="modal" data-target="#editModal" href="#" href="#"><i class="icon-pencil"></i> Edit Profile</a>
           </li>
@@ -957,6 +1073,8 @@
                   <i class="icon-cogs icon-large use-blue"></i>
                 </a>
               <ul class="dropdown-menu">
+                <li><a {{action "loadOwnerTags" target="controller.controllers.base" }}  data-toggle="modal" data-target="#tagsManagerModal" href="#" href="#"><i class="icon-tags"></i> My Tags</a>
+                </li>
                 <li><a data-toggle="modal" data-target="#changePassModal" href="#"><i class="icon-shield"></i> Change Password</a></li>
                 <li><a {{action "toggleEditView" target="base"}} data-toggle="modal" data-target="#editModal" href="#" href="#"><i class="icon-pencil"></i> Edit Profile</a>
                 </li>
@@ -1064,7 +1182,7 @@
         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
         <h4 class="modal-title">{{user.name}}'s Followers</h4>
       </div>
-      <div class="modal-body">
+      <div class="modal-body scroll-modal-body" >
         <div class="followers">
           {{#if followers.isLoaded}}
           {{#each followers}}

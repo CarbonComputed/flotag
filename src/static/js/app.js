@@ -1,6 +1,16 @@
 var T = {};
 var tagDict = {};
 var tagCompDict = {};
+var tagQueue = [];
+processTags();
+$.xhrPool = [];
+$.xhrPool.abortAll = function() {
+    $(this).each(function(idx, jqXHR) {
+        jqXHR.abort();
+    });
+    $.xhrPool = [];
+};
+
 T.compile = function (template) {
     var compile = Handlebars.compile(template),
         render = {
@@ -61,13 +71,22 @@ function buildTree(tree,root){
 }
 
 $.ajaxSetup({
+    beforeSend: function(jqXHR) {
+        $.xhrPool.push(jqXHR);
+    },
+    complete: function(jqXHR) {
+        var index = $.xhrPool.indexOf(jqXHR);
+        if (index > -1) {
+            $.xhrPool.splice(index, 1);
+        }
+    },
     error : function(jqXHR, textStatus, errorThrown) {
         if (jqXHR.status == 404) {
             //document.location = "/404.html";
         }
         if (jqXHR.status == 401) {
-            localStorage.loggedIn = false;
-            document.location = "/#/login";
+            // localStorage.loggedIn = false;
+            // document.location = "/#/login";
 
         }
         if (jqXHR.status == 500) {
@@ -147,6 +166,16 @@ Flotag.AuthenticatedRoute = Ember.Route.extend({
     },
 
 	beforeModel: function(transition){
+		var self = this;
+		Flotag.User.checkIfLoggedIn().then(this,function(val){
+					if(val.status && val.status != 200){
+
+								self.controllerFor('login').set('loggedIn',false);
+								self.redirectToLogin(transition);
+							
+					}
+					return val;
+		});
 		if(this.controllerFor('login').get('loggedIn') == "false" || !this.controllerFor('login').get('loggedIn')){
 			this.redirectToLogin(transition);
 		}
@@ -174,8 +203,16 @@ Flotag.BaseRoute = Flotag.AuthenticatedRoute.extend({
 	setupController: function(controller, model){
 		var self = this;
 		
-		this.controllerFor('application').get('currentUserPromise').then(this,function(user){
-			 self.controllerFor('base').set("currTags",Flotag.User.getUserTags(user._id.$oid));
+		this.controllerFor('authenticated').get('currentUserPromise').then(this,function(user){
+				if(user.status && user.status != 200){
+					// self.controllerFor('login').set('loggedIn',false);
+					// document.location = "/#/login";
+					 self.controllerFor('base').set("currTags",[]);
+				}
+				else{
+					self.controllerFor('base').set("currTags",Flotag.User.getUserTags(user._id.$oid));
+
+				}
 
 		});
 		
@@ -184,7 +221,8 @@ Flotag.BaseRoute = Flotag.AuthenticatedRoute.extend({
   		this.controllerFor('base').set('searchLoaded',false);
 
 
-	}
+	},
+
 
 });
 Flotag.IndexRoute = Flotag.BaseRoute.extend({
@@ -203,15 +241,23 @@ Flotag.IndexRoute = Flotag.BaseRoute.extend({
 		self.controllerFor('application').set('isLoading',true);
 
 		Flotag.Post.getFeed().then(null,function(feed){
+			if(feed.status && feed.status != 200){
+				//document.location = "/#/login";
+				controller.set('model',[]);
+				self.controllerFor('posts').set('model',[]);
+			}
+			else{
+					self.controllerFor('posts').set('model',feed);
+					controller.set('model',feed);
+			}
+			self.controllerFor('application').set('isLoading',false);
 
-			self.controllerFor('posts').set('model',feed);
-			controller.set('model',feed);
-					self.controllerFor('application').set('isLoading',false);
+
 
 
 		});
 		Flotag.Tag.getTrending(controller.get('trendingTime')).then(null,function(tags){
-
+			
 			controller.set('trendingTags',tags);
 		});
 		this._super(controller,model);
@@ -321,7 +367,7 @@ Flotag.TagRoute = Flotag.BaseRoute.extend({
 Flotag.VerifyRoute = Ember.Route.extend({
 
 	model: function(params){
-		debugger;
+		
 		var self = this;
 		return $.getJSON("/api/verify?regid=" + params.reg_id+"&_="+Math.random()).then(function(data){
 			
@@ -337,31 +383,53 @@ Flotag.VerifyRoute = Ember.Route.extend({
 * Models
 **************************/
 Flotag.ApplicationController = Ember.Controller.extend({
+
+  isLoading: false,
+
+  updateCurrentPath: function() {
+  				$(".modal-backdrop").remove();
+			$("body").removeClass('modal-open');
+			$("#followersModal").modal('hide');
+    Flotag.set('currentPath', this.get('currentPath'));
+ 			var self = this;
+
+  }.observes('currentPath'),
+  	jqueryInit: function(){
+
+  	}
+
+});
+
+
+Flotag.AuthenticatedController = Ember.Controller.extend({
+
+  
   currentUser: null,
   currentUserPromise: null,
-  isLoading: false,
+  
   init: function(){
   	//set current user
+  		
   		var self = this;
-		if(this.controllerFor('login').get('loggedIn') != "false" && this.controllerFor('login').get('loggedIn') && this.get('protected')){
-			var dfd = Flotag.User.getCurrentUser().then(this,function(val){
+		if(this.controllerFor('login') && this.controllerFor('login').get('loggedIn') != "false" && this.controllerFor('login').get('loggedIn')){
+			var dfd = Flotag.User.getCurrentUser().then(null,function(val){
 				if(val.status && val.status != 200){
-					self.controllerFor('login').set('loggedIn',false);
-					self.transitionToRoute('login');
-					return;
+
 				}
-				self.set('currentUser',val);
+				else{
+					self.set('currentUser',val);
+
+				}
 				return val;
 			});
-  			self.set('currentUserPromise',dfd);
+			
+			self.set('currentUserPromise',dfd);
+
+			
 		}
   	
   },
 
-  protected: function(){
-	return Flotag.get('currentPath') != 'login' && Flotag.get('currentPath') != 'verify';
-	 
-  }.property(),
 
   refreshUser: function(){
   	var self = this;
@@ -375,22 +443,6 @@ Flotag.ApplicationController = Ember.Controller.extend({
 	return dfd;
   },
 
-  updateCurrentPath: function() {
-  				$(".modal-backdrop").remove();
-			$("body").removeClass('modal-open');
-			$("#followersModal").modal('hide');
-    Flotag.set('currentPath', this.get('currentPath'));
- 			var self = this;
-	// Flotag.User.checkIfLoggedIn().then(this,function(val){
-	// 			if(val.status && val.status != 200){
-	// 				self.controllerFor('login').set('loggedIn',false);
-	// 				self.transitionToRoute('login');
-	// 				self.set('isLoading',false);
-	// 				return;
-	// 			}
-				// return val;
-	// });
-  }.observes('currentPath'),
 
   profileImgUrl: function(){
 
@@ -402,7 +454,7 @@ Flotag.ApplicationController = Ember.Controller.extend({
 
   	jqueryInit: function(){
 
-  	},
+  	}
 });
 
 Flotag.User = Em.Object.extend({
@@ -492,6 +544,53 @@ Flotag.Tag.reopenClass({
 					tag.setProperties(data.models.tags);			
 
 				return tag;
+		});
+	},
+    updateTag: function(tagid,about,img){
+		var putData = 
+			{"models" : {
+				"tag": {
+						"about" : about,
+						},
+						"profile_img" : img}};
+    	var ret = $.ajax({
+			type: "PUT",
+			url : "/api/tag/"+tagid,
+			data: JSON.stringify(putData),
+			
+			dataType: "application/json",
+			contentType : "application/json"
+		});
+		return ret;
+    },
+	getTags: function(tagids){
+        var tags = []; //create an empty object
+		return $.ajax({
+			type: "GET",
+			url : "/api/tag?tag_ids="+tagids,
+			//data: JSON.stringify({"args" : data }),
+			complete: function(data){
+
+				
+			},
+			dataType: "application/json"
+			//contentType : "application/json"
+		}).then(null,function(data){
+				if(data.status != 200){
+					return data;
+				}
+				data = JSON.parse(data.responseText);
+				data.models.tags.forEach(function(tag){
+                	var model = Flotag.Tag.create(tag); 
+                	tags.addObject(model); //fill your array step by step
+                	//model.set('post',that);
+
+
+				});
+				console.log(tags);
+
+				return tags;		
+
 		});
 	},
 
@@ -804,6 +903,9 @@ Flotag.Post.reopenClass({
 			url : "/api/post?sort="+sort+"&page="+page+"&tags="+tags,
 			dataType: "application/json"
 		}).then(this,function(data){
+				if(data.status != 200){
+					return data;
+				}
 
 				data = JSON.parse(data.responseText);
 				if(!data.models.posts){
@@ -900,12 +1002,18 @@ Flotag.User.reopenClass({
 
     getCurrentUser: function() {
          //create an empty object
+         
 		return $.ajax({
 			type: "GET",
 			url : "/api/user/me?detailed=True",
 			dataType: "application/json",
 			//contentType : "application/json"
 		}).then(this,function(data){
+				if(data.status == 401){
+					//document.location = "/#/login";
+					//$.xhrPool.abortAll();
+					return data;
+				}
 				if(data.status != 200){
 					return data;
 				}
@@ -943,6 +1051,9 @@ Flotag.User.reopenClass({
 			url : "/api/nots",
 			//data: JSON.stringify({"args" : data }),
 			complete: function(data){
+				if(data.status != 200){
+					return;
+				}
 				data = JSON.parse(data.responseText);
             	data.models.notifications.forEach(function(not){
                 	var model = Flotag.Notification.create(not); 
@@ -1030,6 +1141,29 @@ Flotag.User.reopenClass({
 
 		});
         return currTags;
+    },
+
+    getOwnerTags: function(){
+        var ownerTags = []; //create an empty object
+        ownerTags.set('isLoaded',false);
+		return $.ajax({
+			type: "GET",
+			url : "/api/tag/owner",
+			dataType: "application/json",
+			//contentType : "application/json"
+		}).then(this,function(data){
+			data = JSON.parse(data.responseText);
+			
+        	data.models.tags.forEach(function(tag){
+            	var model = Flotag.Tag.create(tag); 
+            	model.value = model.name;
+            	ownerTags.addObject(model); //fill your array step by step
+
+        	});
+        	ownerTags.set("isLoaded", true);
+        	return ownerTags;
+
+		});
     },
 
 
@@ -1182,7 +1316,13 @@ Flotag.UserView = Ember.View.extend({
 });
 
 Flotag.PostsView = Ember.View.extend({
-	templateName: 'posts-view'
+	templateName: 'posts-view',
+
+	didInsertElement: function(){
+		
+	}
+
+
 
 });
 
@@ -1312,6 +1452,7 @@ Flotag.PostPostView = Em.View.extend({
 	isImageLink: false,
 	isVideoLink: false,
 	image: null,
+	currRequest: null,
 
 
 	loadPreview: function() {
@@ -1324,8 +1465,11 @@ Flotag.PostPostView = Em.View.extend({
 	  this.set('isLink',link);
 	  this.set("link",link);
 	  var that = this;
-
-
+	  var xhr = this.get('currRequest');
+	  if(xhr){
+	  	xhr.abort();
+	  	this.set('previewLoading',false);
+	  }
 	  if(link){
 	  var link = link[0];
 	  value = value.replace(expression,"");
@@ -1336,7 +1480,7 @@ Flotag.PostPostView = Em.View.extend({
       that.set('cancelLoad',false);
 
 	  this.set('previewLoading',true);
-		$.ajax({
+		var req = $.ajax({
 			type: "GET",
 			url : "/api/media?url="+link,
 			//data: JSON.stringify({"args" : data }),
@@ -1369,6 +1513,7 @@ Flotag.PostPostView = Em.View.extend({
 			dataType: "application/json",
 			contentType : "application/json"
 		});
+		that.set('currRequest',req);
 	}
 	}.observes('content'),
 
@@ -1432,7 +1577,11 @@ Flotag.PostPostView = Em.View.extend({
 		    var ms = 200; // milliseconds
 		    var val = this.value;
 		    self.set('data',null);
+		    self.set('cancelLoad',true);
+		    if(self.get('currRequest')){
+		    	self.get('currRequest').abort();
 
+		    }
 		    timer = setTimeout(function() {
 		    	self.set('previewLoading',false);
 
@@ -1544,7 +1693,7 @@ Flotag.MobileNavView = Em.View.extend({
 		  	 		$.trim(t);
 		  	 		$("#drop-bar-"+t).removeClass("hide");
 		 			$(this).css("background-color","orange");	
-		 			$(".fixed-nav-page").css("margin-top",($("nav").height()+50)+"px");
+		 			//$(".fixed-nav-page").css("margin-top",($("nav").height()+50)+"px");
 
 		  	 	}
 
@@ -1558,7 +1707,7 @@ Flotag.MobileNavView = Em.View.extend({
 		  	 		var t = str.split("mobile-btn-")[1].trim();
 		  	 		$.trim(t);
 		  	 		$("#drop-bar-"+t).addClass("hide");
-					$(".fixed-nav-page").css("margin-top","100px");
+					//$(".fixed-nav-page").css("margin-top","100px");
 		  	 	}
 
 		 		// $("#drop-bar-search").addClass("hide");;
@@ -1647,6 +1796,71 @@ Flotag.EditProfileView = Em.View.extend({
 
 });
 
+Flotag.EditTagComponent = Ember.Component.extend({
+  
+  templateName: "components/edit-tag",
+  tagAboutInput: null,
+  tagImage: null,
+  
+  updateAbout: function(){
+  	this.set('tagAboutInput',this.get('tag').about);
+  }.observes("tag.about"),
+
+
+
+	visibilityChanged: function(){
+		
+	   // this.set('editAboutInput', this.get('tag').get('about'));
+	   // $("#editImgRemove").click();
+	}.observes(''),
+
+  
+  	saveTag: function(){
+  		var profile_img = null;
+  		if($('#profile-img').attr('src')){
+  			//showAlert($('#edit-modal-alert'),"No Image Supplied");
+  			//return;
+  			profile_img = $('#profile-img').attr('src').replace(/data:image\/(jpeg|png);base64,/,"");
+  			
+  		}
+  		var about = this.get('tagAboutInput');
+  		var self = this;
+  		Flotag.Tag.updateTag(this.get('tag')._id.$oid,about,profile_img).then(null,function(data){
+			data = JSON.parse(data.responseText);
+			if(!data.success){
+				showAlert($('#edit-tag-modal-alert'),"Invalid Data");
+
+			}
+			else{
+				$('#editTagModal').modal('hide');
+				showSuccess($('#tags-manager-alert'),"Saved Changes");
+				self.get('base').send("loadOwnerTags");
+			}
+			// self.get('controller.controllers.application').refreshUser().then(null,function(user){
+			// 				//possibly update feed
+	
+			// });
+  		});
+
+  	},
+
+  	hideEditView: function(){
+  // 		Ember.run.later(this,function() {
+  // 			this.set('controller.base.editViewVisible',false);
+  // // code to be execute within a RunLoop
+		// },300);
+  		
+  	},
+
+  keyDown: function(e) {
+  	if(e.keyCode == 13){
+    	this.send('saveChanges');
+	}
+  }
+  
+
+});
+
 Flotag.ChangePassView = Em.View.extend({
   templateName: 'change-pass-view',
   oldPass : null,
@@ -1698,6 +1912,47 @@ Flotag.ChangePassView = Em.View.extend({
   
 
 });
+
+
+
+Flotag.TagsManagerView = Em.View.extend({
+  templateName: 'tags-manager-view',
+  editTagComponent: null,
+
+  	init: function(){
+
+		var editTagComponent = this.get('editTagComponent');
+		var fn = this.get('controller.controllers.base');
+		if(!editTagComponent){
+			var f= Flotag.EditTagComponent.create({"base": fn}).append();
+			this.set('editTagComponent',f);
+		}
+  	},
+
+  	destroy: function(){
+  		this._super();
+  		this.get('editTagComponent').destroy();
+  	},
+	actions: {
+		urlClick: function(uid){
+			$(".modal-backdrop").remove();
+			$("body").removeClass('modal-open');
+			$("#followersModal").modal('hide');
+	  		document.location = "/#/tag/" +uid;
+		},
+
+		editClicked: function(tag){
+			var editTagComponent = this.get('editTagComponent');
+			editTagComponent.setProperties({"tag":tag});
+			console.log(editTagComponent.get('tag'));
+			Ember.run.next(function(){
+				$("#editTagModal").modal('show');
+			});
+		}
+	}  
+
+});
+
 
 
 Flotag.NotificationView = Em.View.extend({
@@ -1837,23 +2092,9 @@ Flotag.TagCompComponent = Ember.Component.extend({
 					//self.set('tagDetailed',tagDict[tag.tag.$oid]);
 				}
 				else{
-					Flotag.Tag.find(tag.tag.$oid).then(null,function(ntag){
-		    			if(!self.get('isDestroyed')){
-							//self.set('tagDetailed',ntag);
+					tagQueue.push(tag.tag.$oid);
 
-							tagDict[self.get('tag').tag.$oid] = ntag;
-							var length = tagCompDict[self.get('tag').tag.$oid].length,
-							    element = null;
 
-							for (var i = 0; i < length; i++) {
-							  element = tagCompDict[self.get('tag').tag.$oid][i];
-							  element.propertyDidChange('tagDetailed');
-							  // Do something with element i.
-							}
-							//console.log(tagDict);
-						}
-
-					});
 				}
 				if(!tagDict[tag.tag.$oid]){
 					tagDict[tag.tag.$oid] = tag;
@@ -2032,13 +2273,16 @@ Flotag.UserListViewComponent = Ember.Component.extend({
 
 Flotag.BaseController = Ember.ObjectController.extend(Ember.Evented,{
 
-	needs: ['application'],
-	currentUser: Ember.computed.alias("controllers.application.currentUser"),
+	needs: ['application','authenticated'],
+	currentUser: Ember.computed.alias("controllers.authenticated.currentUser"),
+	authenticated: Ember.computed.alias("controllers.authenticated"),
+
 	sort : "erank",
 	showNotifications: false,
 	searchLoaded: false,
 	unreadNots: false,
 	currTags: [],
+	ownerTags: [],
 	notifications: [],
 	editViewVisible: false,
 	followers: [],
@@ -2062,33 +2306,71 @@ Flotag.BaseController = Ember.ObjectController.extend(Ember.Evented,{
 			self.set('followers',followers);
 
 		});
+	},
+
+  	loadOwnerTags: function(uid){
+  		var self = this;
+		Flotag.User.getOwnerTags().then(null,function(ownedTags){
+			self.set('ownerTags',ownedTags);
+		});
 	}
 
 
 });
 
+function processTags(){
+	setTimeout(processTags,2000);
+	if(tagQueue.length > 0){
+	Flotag.Tag.getTags(JSON.stringify(tagQueue)).then(null,function(tags){
+				console.log(tags);
+				//self.set('tagDetailed',ntag);
+				tags.forEach(function(ntag){
+
+					tagDict[ntag._id.$oid] = ntag;
+					var length = tagCompDict[ntag._id.$oid].length,
+					    element = null;
+
+					for (var i = 0; i < length; i++) {
+					  element = tagCompDict[ntag._id.$oid][i];
+					  element.propertyDidChange('tagDetailed');
+					  // Do something with element i.
+					}
+				});
+
+				//console.log(tagDict);
+			
+
+		});
+	tagQueue = [];
+}
+}
+
 
 Flotag.IndexController = Ember.ArrayController.extend({
-	needs: ['application','base' ,'posts','index'],
+	needs: ['application','authenticated','base' ,'posts','index'],
 	base: Ember.computed.alias("controllers.base"),
 	index: Ember.computed.alias("controllers.index"),
 	application: Ember.computed.alias("controllers.application"),
+	authenticated: Ember.computed.alias("controllers.authenticated"),
 
-  	currentUser: Ember.computed.alias("controllers.application.currentUser"),
+
+  	currentUser: Ember.computed.alias("controllers.authenticated.currentUser"),
 	posts : Ember.computed.alias("controllers.posts"),
 	sort: Ember.computed.alias("controllers.posts.sort"),
 	page : Ember.computed.alias("controllers.posts.page"),
 	canLoadMore : Ember.computed.alias("controllers.posts.canLoadMore"),
 	currTags: Ember.computed.alias("controllers.base.currTags"),
+	ownedTags: Ember.computed.alias("controllers.base.ownedTags"),
 	postTags: Ember.computed.alias("controllers.posts.postTags"),
 	notifications: Ember.computed.alias("controllers.base.notifications"),
-	trendingTime: 700,
+	trendingTime: 24,
 
 	init: function(){
 		this._super();
 		this.addObserver('currTags.isLoaded', this, function(){
 			this.send('initCurrentTags');
 		});
+		
 	},
 	reset: function(){
 		$("#post-tags").tagsManager("empty");
@@ -2115,7 +2397,7 @@ Flotag.IndexController = Ember.ArrayController.extend({
 	  				self.set('posts.model', feed);
 	  				self.set('page',1);
 					self.set('canLoadMore', true);
-						self.controllerFor('application').refreshUser().then(null,function(user){
+						self.controllerFor('authenticated').refreshUser().then(null,function(user){
 							//possibly update feed
 							self.get('application').set('isLoading',false);
 						});
@@ -2155,7 +2437,7 @@ Flotag.IndexController = Ember.ArrayController.extend({
 	  				self.set('posts.model', feed);
 					self.set('page',1);
 					self.set('canLoadMore', true);
-						self.controllerFor('application').refreshUser().then(null,function(user){
+						self.controllerFor('authenticated').refreshUser().then(null,function(user){
 							//possibly update feed
 							self.get('application').set('isLoading',false);
 						});
@@ -2194,8 +2476,11 @@ Flotag.IndexController = Ember.ArrayController.extend({
 								      footer: '<div class="dropdown-button"><button href="#myModal" role="button" data-toggle="modal" class="btn btn-primary">Create Tag!</button></div>',
 								      engine: T,
 									  template: [  
-									  	'<p class="repo-freq">x{{frequency}}</p>'  ,                                                               
+									  	'<p class="repo-freq">x{{frequency}}</p>'  ,   
+									  	'<p class="repo-name"><em>{{username}}</em></p>',
+                                                            
 									    '<p class="repo-name">{{name}}</p>',
+
 
 									                                        
 									                             
@@ -2271,59 +2556,28 @@ Flotag.IndexController = Ember.ArrayController.extend({
 	}.property("notifications.@each"),
 
 	updateTrends: function(){
+		var self = this;
+		if(this.get('trendingTime')){
+			Flotag.Tag.getTrending(this.get('trendingTime')).then(null,function(tags){
+				
+				self.set('trendingTags',tags);
+			});			
+		}
 
 	}.observes("trendingTime")
 });
-Ember.ContenteditableView = Em.View.extend({
-        tagName: 'div',
-        attributeBindings: ['contenteditable'],
+  Flotag.InlineTextField = Ember.TextField.extend({
+    focusOut: function() {
+      Flotag.set('isEditing', false);
+    }
+  });
 
-        // Variables:
-        editable: false,
-        isUserTyping: false,
-        plaintext: false,
-
-        // Properties:
-        contenteditable: (function() {
-                var editable = this.get('editable');
-
-                return editable ? 'true' : undefined;
-        }).property('editable'),
-
-        // Observers:
-        valueObserver: (function() {
-                if (!this.get('isUserTyping') && this.get('value')) {
-                        return this.setContent();
-                }
-        }).observes('value'),
-
-        // Events:
-        didInsertElement: function() {
-                return this.setContent();
-        },
-
-        focusOut: function() {
-                return this.set('isUserTyping', false);
-        },
-
-        keyDown: function(event) {
-                if (!event.metaKey) {
-                        return this.set('isUserTyping', true);
-                }
-        },
-
-        keyUp: function(event) {
-                if (this.get('plaintext')) {
-                        return this.set('value', this.$().text());
-                } else {
-                        return this.set('value', this.$().html());
-                }
-        },
-
-        setContent: function() {
-                return this.$().html(this.get('value'));
-        }
-});
+  Flotag.TextView = Ember.View.extend({
+  	tagName: "span",
+    doubleClick: function() {
+      Flotag.set('isEditing', true);
+    }
+  });
 
 function handleTag(self,e,tag){
 	var hoverComponent = self.get('hoverComp');
@@ -2381,15 +2635,18 @@ function handleTag(self,e,tag){
 
 Flotag.PostsController =  Ember.ArrayController.extend({
 
-  	needs: ['application','base' ,'posts'],
-  	currentUser: Ember.computed.alias("controllers.application.currentUser"),
+  	needs: ['application','authenticated','base' ,'posts'],
+  	currentUser: Ember.computed.alias("controllers.authenticated.currentUser"),
 	application: Ember.computed.alias("controllers.application"),
+	authenticated: Ember.computed.alias("controllers.authenticated"),
 
     itemController: 'post',
     feedTags: null,
     page: 1,
     isLoading: false,
     canLoadMore: true,
+
+
     
 	actions: {
 
@@ -2409,7 +2666,7 @@ Flotag.PostsController =  Ember.ArrayController.extend({
 				
 				if(text && text.length > 0){
 					Flotag.Post.post(text,[tag]).then(null,function(data){
-						self.controllerFor('application').refreshUser().then(null,function(user){
+						self.controllerFor('authenticated').refreshUser().then(null,function(user){
 							//possibly update feed
 							data = JSON.parse(data.responseText);
 							if(!data.success){
@@ -2542,7 +2799,14 @@ Flotag.PostsController =  Ember.ArrayController.extend({
   		Flotag.User.updateTags(this.get("currTags"));
 
   		this.set('content', Flotag.Post.getFeed(this.get('currentUser'),this.get('sort'),1,null));
-  	}.on("currentTagsUpdated")
+  	}.on("currentTagsUpdated"),
+
+	// processTags: function(){
+	// 	if(this.get('model').length > 0){
+	// 		console.log(this.get('model'));
+
+	// 	}
+	// }.observes("model.@each")
 
 
 
@@ -2550,9 +2814,10 @@ Flotag.PostsController =  Ember.ArrayController.extend({
 
 Flotag.PostController = Ember.ObjectController.extend({
 
-  	needs: ['application'],
-  	currentUser: Ember.computed.alias("controllers.application.currentUser"),
+  	needs: ['application','authenticated'],
+  	currentUser: Ember.computed.alias("controllers.authenticated.currentUser"),
 	application: Ember.computed.alias("controllers.application"),
+	authenticated: Ember.computed.alias("controllers.authenticated"),
 
 	isReplying: false,
 	repliesHidden: true,
@@ -2625,7 +2890,7 @@ Flotag.PostController = Ember.ObjectController.extend({
 		  	Flotag.Reply.reply(post,null,replyText).then(null,function(data){
 		  		post.set('reply_count',post.get('reply_count')+1);
 
-				self.controllerFor('application').refreshUser().then(null,function(user){
+				self.controllerFor('authenticated').refreshUser().then(null,function(user){
 							//possibly update feed
 					post.getReplies(1,self.get('totalLoaded'),self.get('sort')).then(null,function(replies){
 						self.set('replies',replies);
@@ -2749,12 +3014,14 @@ Flotag.PostController = Ember.ObjectController.extend({
 
 
 Flotag.UserController = Em.ObjectController.extend({
-	needs: ['application','base' ,'posts','index'],
+	needs: ['application','authenticated','base' ,'posts','index'],
 	index: Ember.computed.alias("controllers.index"),
 
 	application: Ember.computed.alias("controllers.application"),
+	authenticated: Ember.computed.alias("controllers.authenticated"),
+
 	base: Ember.computed.alias("controllers.base"),
-  	currentUser: Ember.computed.alias("controllers.application.currentUser"),
+  	currentUser: Ember.computed.alias("controllers.authenticated.currentUser"),
 	currTags: Ember.computed.alias("controllers.base.currTags"),
 	posts: Ember.computed.alias("controllers.posts"),
 	notifications: Ember.computed.alias("controllers.base.notifications"),
@@ -2787,7 +3054,7 @@ Flotag.UserController = Em.ObjectController.extend({
 					self.get('application').set('isLoading',true);
 
 					Flotag.Post.post(text,[tag]).then(null,function(data){
-						self.get('application').refreshUser().then(null,function(user){
+						self.get('authenticated').refreshUser().then(null,function(user){
 										//possibly update feed
 							
 							Flotag.Post.getFeed("erank",1,JSON.stringify([tag.get('_id')])).then(null,function(feed){
@@ -2819,15 +3086,17 @@ Flotag.UserController = Em.ObjectController.extend({
 	  		if(!currTags || !tagAdded){
 	  			return;
 	  		}
+			self.get('application').set('isLoading',true);
 
 			currTags.addObject(tagAdded);
 			this.propertyWillChange('currTags');
 			this.set('currTags',currTags);
 			this.propertyDidChange('currTags');
 	  		Flotag.User.updateTags(currTags).then(this,function(data){
-				self.get('application').refreshUser().then(null,function(user){
+				self.get('authenticated').refreshUser().then(null,function(user){
 								//possibly update feed
-		
+							self.get('application').set('isLoading',false);
+
 				});
 	  		});
 
@@ -2851,14 +3120,16 @@ Flotag.UserController = Em.ObjectController.extend({
 		  		
 			});
 			currTags.splice(indexToRemove,1);
+					self.get('application').set('isLoading',true);
 
 			this.propertyWillChange('currTags');
 			this.set('currTags',currTags);
 			this.propertyDidChange('currTags');
 	  		Flotag.User.removeTags([tagRemoved]).then(this,function(data){
-				self.get('application').refreshUser().then(null,function(user){
+				self.get('authenticated').refreshUser().then(null,function(user){
 								//possibly update feed
-		
+							self.get('application').set('isLoading',false);
+
 				});
 	  		});
 		}
@@ -2871,12 +3142,13 @@ Flotag.UserController = Em.ObjectController.extend({
 
 
 Flotag.TagController = Em.ObjectController.extend({
-	needs: ['application','base' ,'posts','index'],
+	needs: ['application','authenticated','base' ,'posts','index'],
 	application: Ember.computed.alias("controllers.application"),
 	index: Ember.computed.alias("controllers.index"),
+	authenticated: Ember.computed.alias("controllers.authenticated"),
 
 	base: Ember.computed.alias("controllers.base"),
-  	currentUser: Ember.computed.alias("controllers.application.currentUser"),
+  	currentUser: Ember.computed.alias("controllers.authenticated.currentUser"),
 	currTags: Ember.computed.alias("controllers.base.currTags"),
 	posts: Ember.computed.alias("controllers.posts"),
 	notifications: Ember.computed.alias("controllers.base.notifications"),
@@ -2908,7 +3180,7 @@ Flotag.TagController = Em.ObjectController.extend({
 					self.get('application').set('isLoading',true);
 
 					Flotag.Post.post(text,[tag]).then(null,function(data){
-						self.get('application').refreshUser().then(null,function(user){
+						self.get('authenticated').refreshUser().then(null,function(user){
 										//possibly update feed
 							
 							Flotag.Post.getFeed("erank",1,JSON.stringify([tag.get('_id')])).then(null,function(feed){
@@ -2940,15 +3212,17 @@ Flotag.TagController = Em.ObjectController.extend({
 	  		if(!currTags || !tagAdded){
 	  			return;
 	  		}
+			self.get('application').set('isLoading',true);
 
 			currTags.addObject(tagAdded);
 			this.propertyWillChange('currTags');
 			this.set('currTags',currTags);
 			this.propertyDidChange('currTags');
 	  		Flotag.User.updateTags(currTags).then(this,function(data){
-				self.get('application').refreshUser().then(null,function(user){
+				self.get('authenticated').refreshUser().then(null,function(user){
 								//possibly update feed
-		
+							self.get('application').set('isLoading',false);
+
 				});
 	  		});
 
@@ -2972,14 +3246,16 @@ Flotag.TagController = Em.ObjectController.extend({
 		  		
 			});
 			currTags.splice(indexToRemove,1);
+			self.get('application').set('isLoading',true);
 
 			this.propertyWillChange('currTags');
 			this.set('currTags',currTags);
 			this.propertyDidChange('currTags');
 	  		Flotag.User.removeTags([tagRemoved]).then(this,function(data){
-				self.get('application').refreshUser().then(null,function(user){
+				self.get('authenticated').refreshUser().then(null,function(user){
 								//possibly update feed
-		
+							self.get('application').set('isLoading',false);
+
 				});
 	  		});
 		}
@@ -2991,15 +3267,18 @@ Flotag.TagController = Em.ObjectController.extend({
 
 Flotag.LoginController = Ember.Controller.extend({
 
-  needs: ['application'],
+  needs: ['application','authenticated'],
   application: Ember.computed.alias("controllers.application"),
+  authenticated: Ember.computed.alias("controllers.authenticated"),
+
+
 
 	reset: function(){
 		this.setProperties({
 			username : "",
 			password : ""
 		});
-		this.get('application').set('isLoading',false);
+		//this.get('application').set('isLoading',false);
 
 	},
 	
@@ -3042,7 +3321,7 @@ Flotag.LoginController = Ember.Controller.extend({
 				else{
 					self.set('loggedIn',true);
 					var attemptedTransition = self.get('attemptedTransition');
-					self.get('application').refreshUser().then(null,function(user){
+					self.get('authenticated').refreshUser().then(null,function(user){
 
 					});
 					if(attemptedTransition){
@@ -3066,10 +3345,11 @@ Flotag.TreeBranchController = Ember.ObjectController.extend({
 
 
 Flotag.TreeNodeController = Ember.ObjectController.extend({
-  needs: ['application'],
+  needs: ['application','authenticated'],
 	application: Ember.computed.alias("controllers.application"),
+  authenticated: Ember.computed.alias("controllers.authenticated"),
 
-  currentUser: Ember.computed.alias("controllers.application.currentUser"),
+  currentUser: Ember.computed.alias("controllers.authenticated.currentUser"),
   isExpanded: true,
 
   isReplying: false,
@@ -3114,7 +3394,7 @@ Flotag.TreeNodeController = Ember.ObjectController.extend({
 	  	Flotag.Reply.reply(post,reply,replyText).then(null,function(data){
 	  			post.set('reply_count',post.get('reply_count')+1);
 
-				self.controllerFor('application').refreshUser().then(null,function(user){
+				self.controllerFor('authenticated').refreshUser().then(null,function(user){
 							//possibly update feed
 					post.getReplies().then(null,function(replies){
 						post.set('replies',replies);
@@ -3401,12 +3681,12 @@ function loginBack() {
     		    		            		points[i].x = Math.random() * $(window).width();
     		    		            		points[i].vx = Math.random() * 4 - 2;
     		    		            		points[i].vy = Math.random() * 4 - 2;
+
+    	    				        }	
     		    		            	    $("#curves").height($(window).height());
     		    		            	    $("#curves").width($(window).width());   
     		    		            	    $("canvas").height($(window).height());
     		    		            	    $("canvas").width($(window).width());   
-    	    				        }	
-
     	    				   }
     	    			   });
     				        timepassed = 0;
