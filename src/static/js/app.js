@@ -149,7 +149,11 @@ Flotag.LogoutRoute = Ember.Route.extend({
 
 		this.controllerFor('login').set('loggedIn',false);
 		//debugger;
+		this.controllerFor('authenticated').reset()
 		this.controllerFor('index').reset();
+		this.controllerFor('user').reset();
+		this.controllerFor('base').reset();
+		this.controllerFor('tag').reset();
 		var that = this;
 		$.get( "/api/auth/logout", function( data ) {
 		   that.transitionTo('login');
@@ -210,6 +214,7 @@ Flotag.BaseRoute = Flotag.AuthenticatedRoute.extend({
 					 self.controllerFor('base').set("currTags",[]);
 				}
 				else{
+
 					self.controllerFor('base').set("currTags",Flotag.User.getUserTags(user._id.$oid));
 
 				}
@@ -234,6 +239,7 @@ Flotag.IndexRoute = Flotag.BaseRoute.extend({
     },  
 
 	setupController: function(controller, model){
+		this.controllerFor('posts').reset();
 
 		controller.set('model',[]);
 		var self = this;
@@ -257,16 +263,14 @@ Flotag.IndexRoute = Flotag.BaseRoute.extend({
 
 		});
 		Flotag.Tag.getTrending(controller.get('trendingTime')).then(null,function(tags){
-			
+			//console.log(tags);
+			controller.propertyWillChange('trendingTags');
 			controller.set('trendingTags',tags);
+			console.log(controller.get('trendingTags').length,controller.get('trendingTags'));
+			controller.propertyDidChange('trendingTags');
 		});
 		this._super(controller,model);
-		this.controllerFor('posts').set('content',[]);
-		this.controllerFor('posts').set("feedTags",null);
-		this.controllerFor('posts').set('page',1);
-		this.controllerFor('posts').set('sort',"erank");
-		this.controllerFor('posts').set('canLoadMore', true);
-		this.controllerFor('posts').set("feedTags",null);
+		
 	}
 
 
@@ -286,6 +290,8 @@ Flotag.UserRoute = Flotag.BaseRoute.extend({
 	},
 
 	setupController: function(controller, uid){
+		this.controllerFor('posts').reset();
+
 		var self = this;
 		var _id = {"$oid":uid};
 		var tempmodel = Flotag.User.create({"_id": _id});
@@ -314,10 +320,6 @@ Flotag.UserRoute = Flotag.BaseRoute.extend({
 
 		
 
-		this.controllerFor('posts').set('page',1);
-		this.controllerFor('posts').set('sort',"erank");
-		this.controllerFor('posts').set('canLoadMore', true);
-
 
 	}
 
@@ -333,6 +335,8 @@ Flotag.TagRoute = Flotag.BaseRoute.extend({
 	},
 
 	setupController: function(controller, tid){
+		this.controllerFor('posts').reset();
+
 		var self = this;
 		var tempmodel = Flotag.Tag.create({});
 		controller.set('content',tempmodel);
@@ -355,9 +359,7 @@ Flotag.TagRoute = Flotag.BaseRoute.extend({
 
 
 
-		this.controllerFor('posts').set('page',1);
-		this.controllerFor('posts').set('sort',"erank");
-		this.controllerFor('posts').set('canLoadMore', true);
+
 
 
 	}
@@ -430,6 +432,14 @@ Flotag.AuthenticatedController = Ember.Controller.extend({
   	
   },
 
+  reset: function(){
+
+
+  	this.get('currentUser').voteDict = {};
+  	this.set('currentUser',null);
+  	this.set('currentUserPromise',null);
+  },
+
 
   refreshUser: function(){
   	var self = this;
@@ -479,6 +489,16 @@ Flotag.User = Em.Object.extend({
 		return "/api/profile/"+ this.get('_id').$oid;
     }.property("_id"),
 
+	userProfileImageThumbnail: function() {
+		//debugger;
+	//
+		if(!this.get('_id') || !this.get('_id').$oid){
+			
+			return "";
+		}
+		return "/api/profile/"+ this.get('_id').$oid+"?thumbnail=true";
+    }.property("_id"),
+
 	userUrl: function() {
 		//debugger;
 	//
@@ -517,6 +537,16 @@ Flotag.Tag = Em.Object.extend({
 		return "/api/profile/"+ this.get('_id').$oid;
     }.property('_id.$oid'),
 
+	tagProfileImageThumbnail: function() {
+		//debugger;
+	//
+		if(!this.get('_id') || !this.get('_id').$oid){
+			return null;
+		}
+		
+		return "/api/profile/"+ this.get('_id').$oid+"?thumbnail=true";
+    }.property('_id.$oid'),
+
 });
 
 Flotag.Tag.reopenClass({
@@ -534,7 +564,7 @@ Flotag.Tag.reopenClass({
 			dataType: "application/json"
 			//contentType : "application/json"
 		}).then(null,function(data){
-				if(data.status != 200){
+				if(data.status != 200 && data.status != 304){
 					return data;
 				}
 				data = JSON.parse(data.responseText);
@@ -576,7 +606,7 @@ Flotag.Tag.reopenClass({
 			dataType: "application/json"
 			//contentType : "application/json"
 		}).then(null,function(data){
-				if(data.status != 200){
+				if(data.status != 200 && data.status != 304){
 					return data;
 				}
 				data = JSON.parse(data.responseText);
@@ -595,7 +625,7 @@ Flotag.Tag.reopenClass({
 	},
 
 	getTrending: function(hoursago){
-        var tags = Em.A(); //create an empty object
+        var tags = []; //create an empty object
 		return $.ajax({
 			type: "GET",
 			url : "/api/tag/trending?timeago="+hoursago,
@@ -606,7 +636,35 @@ Flotag.Tag.reopenClass({
 			},
 			dataType: "application/json"
 			//contentType : "application/json"
-		}).then(null,function(data){
+		}).then(function(data){
+		},function(data){
+				data = JSON.parse(data.responseText);
+				data.models.tags.forEach(function(tag){
+                	var model = Flotag.Tag.create(tag); 
+                	tags.addObject(model); //fill your array step by step
+                	//model.set('post',that);
+
+
+				});
+
+				return tags;
+		});
+	},
+
+	getRandom: function(excludes,nresults){
+        var tags = []; //create an empty object
+		return $.ajax({
+			type: "GET",
+			url : "/api/tag/random?nresults="+nresults+"&exclude="+excludes,
+			//data: JSON.stringify({"args" : data }),
+			complete: function(data){
+
+				
+			},
+			dataType: "application/json"
+			//contentType : "application/json"
+		}).then(function(data){
+		},function(data){
 				data = JSON.parse(data.responseText);
 				data.models.tags.forEach(function(tag){
                 	var model = Flotag.Tag.create(tag); 
@@ -682,7 +740,7 @@ Flotag.Notification = Em.Object.extend({
 		if(!this.get('user') || !this.get('user').$oid){
 			return "";
 		}
-    return "/api/profile/"+ this.get('user').$oid;
+    return "/api/profile/"+ this.get('user').$oid+"?thumbnail=true";
   }.property('user.$oid')
 
 });
@@ -903,7 +961,7 @@ Flotag.Post.reopenClass({
 			url : "/api/post?sort="+sort+"&page="+page+"&tags="+tags,
 			dataType: "application/json"
 		}).then(this,function(data){
-				if(data.status != 200){
+				if(data.status != 200 && data.status != 304){
 					return data;
 				}
 
@@ -989,7 +1047,7 @@ Flotag.User.reopenClass({
 			dataType: "application/json"
 			//contentType : "application/json"
 		}).then(null,function(data){
-				if(data.status != 200){
+				if(data.status != 200 && data.status != 304){
 					return data;
 				}
 				data = JSON.parse(data.responseText);
@@ -1014,13 +1072,14 @@ Flotag.User.reopenClass({
 					//$.xhrPool.abortAll();
 					return data;
 				}
-				if(data.status != 200){
+				if(data.status != 200 && data.status != 304){
 					return data;
 				}
 				var user = Flotag.User.create({});
 				data = JSON.parse(data.responseText);
 				data.models.user.name = data.models.user.name.capitalize();
 				user.setProperties(data.models.user);
+				user.voteDict = {};
 				//
 				$.each(user.votes, function( index, value ) {
 
@@ -1051,7 +1110,7 @@ Flotag.User.reopenClass({
 			url : "/api/nots",
 			//data: JSON.stringify({"args" : data }),
 			complete: function(data){
-				if(data.status != 200){
+				if(data.status != 200 && data.status != 304){
 					return;
 				}
 				data = JSON.parse(data.responseText);
@@ -1377,7 +1436,7 @@ Flotag.SearchView = Em.View.extend({
 						      },
 						      engine: T,
 							  template: [  
-							    '<img  class="search-res" style="margin:0;display:inline-block;vertical-align:middle;" src="/api/profile/{{_id.$oid}}" > ', 
+							    '<img  class="search-res" style="margin:0;display:inline-block;vertical-align:middle;" src="/api/profile/{{_id.$oid}}?thumbnail=true" > ', 
 							    '<div style="margin:0;display:inline-block;vertical-align:middle;">'                 ,                                       
 							    '<p class="repo-name">{{name}}</p>',
 							    '<p class="repo-name"><em>{{username}}</em></p>',
@@ -1403,7 +1462,7 @@ Flotag.SearchView = Em.View.extend({
 						      },
 						      engine: T,
 							  template: [  
-							    '<img  class="search-res" style="margin:0;display:inline-block;vertical-align:middle;" src="/api/profile/{{_id.$oid}}" > ', 
+							    '<img  class="search-res" style="margin:0;display:inline-block;vertical-align:middle;" src="/api/profile/{{_id.$oid}}?thumbnail=true" > ', 
 							    '<div style="margin:0;display:inline-block;vertical-align:middle;">'                 ,                                       
 							    '<p class="repo-name">{{name}}</p>',
 							    '</div>'
@@ -1957,8 +2016,16 @@ Flotag.TagsManagerView = Em.View.extend({
 
 Flotag.NotificationView = Em.View.extend({
 	templateName: 'notification-view',
+classNames: ['nhide'],
+
     didInsertElement: function() {
-        this.$().hide().show("slow");
+    		    // this.$().slideUp(0);
+
+		// this.$().slideDown(250);
+		this.$().fadeIn();
+		//var self = this;
+        
+
     }
 
 
@@ -2230,10 +2297,20 @@ Flotag.TagCompComponent = Ember.Component.extend({
 			//console.log(this.get('tag'));
 		}
 	}
+	else{
+		if(this.get('tag').$oid){
+			return "/#/tag/"+this.get("tag").$oid;
+
+		}
+		else if(this.get('tag')._id){
+			return "/#/tag/"+this.get("tag")._id.$oid;
+
+		}
+	}
 	}.property("tagDetailed._id.$oid"),
 
 	imgUrl: function(){
-		return "/api/profile/"+this.get("tag")._id.$oid.toString();
+		return "/api/profile/"+this.get("tag")._id.$oid.toString()+"?thumbnail=true";
 	}.property('tag._id.$oid')
 });
 
@@ -2288,7 +2365,17 @@ Flotag.BaseController = Ember.ObjectController.extend(Ember.Evented,{
 	followers: [],
 
 
-
+	reset: function(){
+		this.set('showNotifications',false);
+		this.set('searchLoaded',false);
+		this.set('unreadNots',false);
+		this.set('currTags',[]);
+		this.set('ownerTags',[]);
+		this.set('notifications',[]);
+		this.set('editViewVisible',false);
+		this.set('followers',[]);
+		this.set('model',null);
+	},
 
 	userProfileUrl: function(){
 
@@ -2364,6 +2451,7 @@ Flotag.IndexController = Ember.ArrayController.extend({
 	postTags: Ember.computed.alias("controllers.posts.postTags"),
 	notifications: Ember.computed.alias("controllers.base.notifications"),
 	trendingTime: 24,
+	trendingTags: null,
 
 	init: function(){
 		this._super();
@@ -2375,12 +2463,15 @@ Flotag.IndexController = Ember.ArrayController.extend({
 	reset: function(){
 		$("#post-tags").tagsManager("empty");
 		$("#current-tags").tagsManager("empty");
+		this.set('trendingTime',24);
+		this.set('trendingTags',null);
+		this.set('model',null);
+
 	},
 
 	actions: {
 
 	  	pushCurrentTag: function(tagAdded){
-
 	  		var self = this;
 	  		var currTags = this.get('currTags');
 
@@ -2397,6 +2488,8 @@ Flotag.IndexController = Ember.ArrayController.extend({
 	  				self.set('posts.model', feed);
 	  				self.set('page',1);
 					self.set('canLoadMore', true);
+													   		$("#currentTagCont").popover("hide");
+										$("#randBtn").popover("hide");
 						self.controllerFor('authenticated').refreshUser().then(null,function(user){
 							//possibly update feed
 							self.get('application').set('isLoading',false);
@@ -2407,6 +2500,25 @@ Flotag.IndexController = Ember.ArrayController.extend({
 	  		});
 
 
+	  	},
+
+	  	pushRandomTags: function(nresults){
+	  		var excludes = [];
+	  		this.get('currTags').forEach(function(tag){
+	  			excludes.push(tag._id);
+	  		});
+	  		var self = this;
+	  		Flotag.Tag.getRandom(JSON.stringify(excludes),nresults).then(null,function(tags){
+								   		$("#currentTagCont").popover("hide");
+										$("#randBtn").popover("hide");
+	  			tags.forEach(function(tag){
+	  				$("#current-tags").tagsManager("pushTag", tag);
+	  				//self.pushCurrentTag(tag);
+	  			});
+	  			if(tags.length == 0){
+	  				showSuccess($('#alert'),"Can you believe it?? Youve added all the Tags in our database!");
+	  			}
+	  		});
 	  	},
 
 
@@ -2422,11 +2534,13 @@ Flotag.IndexController = Ember.ArrayController.extend({
 			var indexToRemove = -1;
 			var tagBeingRemoved = tags[0];
 			$.each(currTags, function( index, value ) {
-				if(value._id.$oid === tagBeingRemoved._id.$oid){
+				if(value._id.$oid == tagBeingRemoved._id.$oid){
 					indexToRemove = index;
 				}
 		  		
 			});
+			console.log(indexToRemove,tagBeingRemoved);
+
 			this.get('application').set('isLoading',true);
 			currTags.splice(indexToRemove,1);
 			this.propertyWillChange('currTags');
@@ -2437,6 +2551,7 @@ Flotag.IndexController = Ember.ArrayController.extend({
 	  				self.set('posts.model', feed);
 					self.set('page',1);
 					self.set('canLoadMore', true);
+
 						self.controllerFor('authenticated').refreshUser().then(null,function(user){
 							//possibly update feed
 							self.get('application').set('isLoading',false);
@@ -2490,11 +2605,23 @@ Flotag.IndexController = Ember.ArrayController.extend({
 								    }).on('typeahead:selected', function (e, d) {
 								    	// var tags = that.get("currTags");
 								    	// tags.addObject(d);
+								   		$("#currentTagCont").popover("hide");
+										$("#randBtn").popover("hide");
+
 								      	$("#current-tags").tagsManager("pushTag", d);
 								 		$("#current-tags").typeahead('setQuery','');
 								 		$("#current-tags").typeahead('setHintValue','');
 
+
 							});
+
+							//check if empty give them some default tags
+							if(self.get('currTags').length == 0){
+								
+								$("#currentTagCont").popover("show");
+								$("#randBtn").popover("show");
+
+							}
 						}
 		            	
 						$('#currentTagCont .tm-tag').hover(
@@ -2558,18 +2685,41 @@ Flotag.IndexController = Ember.ArrayController.extend({
 	updateTrends: function(){
 		var self = this;
 		if(this.get('trendingTime')){
-			Flotag.Tag.getTrending(this.get('trendingTime')).then(null,function(tags){
-				
-				self.set('trendingTags',tags);
-			});			
+			if(this.get('trendingTime') > 0){
+				Flotag.Tag.getTrending(this.get('trendingTime')).then(null,function(tags){
+					if(tags.length == 0){
+						self.set('trendingTags',[]);
+					}
+					else{
+						self.set('trendingTags',tags);
+
+					}
+				});	
+			}
+			else{
+				this.set('trendingTime',24);
+			}		
+		}
+		else{
+			if(!Flotag.get('isEditing')){
+				this.set('trendingTime',24);
+
+			}
+			//this.updateTrends();
 		}
 
-	}.observes("trendingTime")
+	}.observes("trendingTime","Flotag.isEditing")
 });
   Flotag.InlineTextField = Ember.TextField.extend({
     focusOut: function() {
       Flotag.set('isEditing', false);
-    }
+    },
+
+	  keyDown: function(e) {
+	  	if(e.keyCode == 13){
+	    	 Flotag.set('isEditing', false);
+		}
+	  }
   });
 
   Flotag.TextView = Ember.View.extend({
@@ -2645,6 +2795,19 @@ Flotag.PostsController =  Ember.ArrayController.extend({
     page: 1,
     isLoading: false,
     canLoadMore: true,
+    sort: "erank",
+
+    reset: function(){
+
+    	this.set('feedTags',null);
+    	this.set('page',1);
+    	this.set('isLoading',false);
+    	this.set('canLoadMore',true);
+    	this.set('sort',"erank");
+    	this.set('model',[]);
+
+
+    },
 
 
     
@@ -2665,9 +2828,11 @@ Flotag.PostsController =  Ember.ArrayController.extend({
 				var text = $("#postTextArea").val();
 				
 				if(text && text.length > 0){
+
 					Flotag.Post.post(text,[tag]).then(null,function(data){
 						self.controllerFor('authenticated').refreshUser().then(null,function(user){
 							//possibly update feed
+							$("#current-tags").tagsManager("pushTag", tag);
 							data = JSON.parse(data.responseText);
 							if(!data.success){
 								showAlert($('#post-modal-alert'),"Invalid Data");
@@ -2829,6 +2994,19 @@ Flotag.PostController = Ember.ObjectController.extend({
     sort: "rank",
     nresults: 30,
     totalLoaded: 0,
+
+    reset: function(){
+    	this.set('isReplying',false);
+    	this.set('repliesHidden',true);
+    	this.set('repliesLoaded',false);
+    	this.set('repliesLoading',false);
+    	this.set('previewHidden',false);
+    	this.set('canLoadMoreReplies',true);
+    	this.set('page',1);
+    	this.set('sort',"rank");
+    	this.set('nresults',30);
+    	this.set('totalLoaded',0);
+    },
 
 	actions: {
 			toggleReplying: function(){
@@ -3006,7 +3184,7 @@ Flotag.PostController = Ember.ObjectController.extend({
 		if(!this.get('user')._id){
 			return "";
 		}
-        return "/api/profile/"+ this.get('user')._id.$oid;
+        return "/api/profile/"+ this.get('user')._id.$oid+"?thumbnail=true";
     }.property('user._id.$oid')
 
 
@@ -3031,6 +3209,10 @@ Flotag.UserController = Em.ObjectController.extend({
 
 	},
 
+	reset: function(){
+		this.set('content',null);
+		this.set('model',null);
+	},
 
 
 
@@ -3093,6 +3275,7 @@ Flotag.UserController = Em.ObjectController.extend({
 			this.set('currTags',currTags);
 			this.propertyDidChange('currTags');
 	  		Flotag.User.updateTags(currTags).then(this,function(data){
+	  			self.get('model').incrementProperty('frequency');
 				self.get('authenticated').refreshUser().then(null,function(user){
 								//possibly update feed
 							self.get('application').set('isLoading',false);
@@ -3126,6 +3309,8 @@ Flotag.UserController = Em.ObjectController.extend({
 			this.set('currTags',currTags);
 			this.propertyDidChange('currTags');
 	  		Flotag.User.removeTags([tagRemoved]).then(this,function(data){
+		  		self.get('model').decrementProperty('frequency');
+
 				self.get('authenticated').refreshUser().then(null,function(user){
 								//possibly update feed
 							self.get('application').set('isLoading',false);
@@ -3158,7 +3343,10 @@ Flotag.TagController = Em.ObjectController.extend({
 
 	},
 
-
+	reset: function(){
+		this.set('content',null);
+		this.set('model',null);
+	},
 
 	checkUserTagged: function(){
 
@@ -3219,6 +3407,8 @@ Flotag.TagController = Em.ObjectController.extend({
 			this.set('currTags',currTags);
 			this.propertyDidChange('currTags');
 	  		Flotag.User.updateTags(currTags).then(this,function(data){
+	  			self.get('model').incrementProperty('frequency');
+
 				self.get('authenticated').refreshUser().then(null,function(user){
 								//possibly update feed
 							self.get('application').set('isLoading',false);
@@ -3252,6 +3442,8 @@ Flotag.TagController = Em.ObjectController.extend({
 			this.set('currTags',currTags);
 			this.propertyDidChange('currTags');
 	  		Flotag.User.removeTags([tagRemoved]).then(this,function(data){
+	  			self.get('model').decrementProperty('frequency');
+
 				self.get('authenticated').refreshUser().then(null,function(user){
 								//possibly update feed
 							self.get('application').set('isLoading',false);

@@ -47,6 +47,7 @@ class UserHandlerById(RestHandler):
                 response.model['user'],error = yield gen.Task(CallIT.gen_run,UserActions._get_user_by_id,id,detailed=False,includes=fields)
                 if response.model['user'] == None:
                     self.set_status(404, "User not found")
+
         except Exception, e:
             response.success = False
             response.args['Message'] = e.message
@@ -72,6 +73,7 @@ class UserHandlerByName(RestHandler):
                 raise Exception("Invalid Permissions")
             else:
                 response.model['user'],error = yield gen.Task(CallIT.gen_run,UserActions._get_user_by_name,username,detailed,includes=fields)
+
         except Exception, e:
             response.success = False
             response.args['Message'] = e.message
@@ -189,9 +191,9 @@ class UserDefaultTagHandler(RestHandler):
         response = ResponseModel()
         try:
             if username == None:
-                cur_user = yield gen.Task(UserActions._get_user_by_id,self.current_uid())
+                cur_user,error = yield gen.Task(CallIT.gen_run,UserActions._get_user_by_id,self.current_uid())
             else:
-                cur_user = yield gen.Task(UserActions._get_user_by_id,username)
+                cur_user,error = yield gen.Task(CallIT.gen_run,UserActions._get_user_by_id,username)
             tags,error = yield gen.Task(CallIT.gen_run,UserActions._get_default_tags,cur_user)
             response.model['tags'] = tags
         except Exception, e:
@@ -439,6 +441,7 @@ class UserActions:
         user = UserActions._get_user_by_id(user.id)
 #         print set(user.default_tags) 
 #         print set(tags) - set(user.default_tags) 
+        print tags
         Tag.objects(id__in=tags).update(inc__frequency=1)
 #         print  "tags",Tag.objects(id__in=tags)
         #Push a notification to the users that says you are following them
@@ -456,6 +459,7 @@ class UserActions:
     def _remove_tags_default(user,tags,save=True,callback=None):
         tags = list(set(tags) & set(user.default_tags))
         user.update(pull_all__default_tags=tags)
+        print tags
         if save:
             user.save()
 

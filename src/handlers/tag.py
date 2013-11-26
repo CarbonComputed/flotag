@@ -16,6 +16,8 @@ import tornado.web
 import logging
 import datetime
 
+import random
+
 logger = logging.getLogger(__name__)
 
     
@@ -45,6 +47,7 @@ class TagHandler(RestHandler):
             response.success = False
             response.args['Message'] = e.message
             logger.error(e)
+
         self.write_json(response)    
         
     
@@ -132,16 +135,17 @@ class OwnerTagHandler(RestHandler):
         self.write_json(response)    
 
 class RandomTagHandler(RestHandler):
-    
+ 
+    @tornado.web.authenticated   
     @tornado.web.asynchronous
     @gen.coroutine
-    def get(self,tag_id):
+    def get(self):
         response = ResponseModel()
         try:
-            nresults = int(self.get_argument("nresults",strip=True,default=50))
-            page = int(self.get_argument("page",strip=True,default=1))
-            timeago = int(self.get_argument("timeago", default=60, strip=True))
-            response.model['tags'] = yield gen.Task(TagActions._get_tags_by_trend,timeago,nresults, page)
+            nresults = int(self.get_argument("nresults",strip=True,default=1))
+            excludes = self.get_argument("exclude",strip=True,default="[]")
+            excludes = loads(excludes)
+            response.model['tags'],error = yield gen.Task(CallIT.gen_run, TagActions._get_tags_by_random,excludes,nresults)
 
         except Exception, e:
             response.success = False
@@ -246,6 +250,22 @@ class TagActions:
         if callback != None:
                 return callback(tags['result'])
         return tags['result']    
+
+    @staticmethod
+    def _get_tags_by_random(excludeTags=[],nresults=1,callback=None):
+        tagc = Tag.objects(id__nin=excludeTags).no_sub_classes().only("name","date_created","about").count()
+        tags = []
+        if nresults > 20:
+            nresults = 1
+        if tagc > 0:
+            for i in range(0,nresults):
+                t = Tag.objects(id__nin=excludeTags).no_sub_classes().only("name","date_created","about").skip(random.randint(0, tagc-1)).first()
+                excludeTags.append(t.id)
+                tagc -= 1
+                tags.append(t)
+        if callback != None:
+                return callback(tags)
+        return tags   
                 
     @staticmethod
     def _create_tag(user,tag_model,callback=None):

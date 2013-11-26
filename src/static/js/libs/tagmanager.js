@@ -16,7 +16,7 @@
  * ========================================================== */
 (function($) {
 
-    "use strict";
+    // "use strict";
 
     var defaults = {
         prefilled: null,
@@ -124,7 +124,21 @@
                 $el = $(html);
                
                 if (opts.tagsContainer !== null) {
+                    $el.hide();
                     $(opts.tagsContainer).append($el);
+                    $el.show('slow',function(){
+                        $("." + newTagRemoveId).on("click", $self, function(e) {
+                            e.preventDefault();
+                            var TagIdToRemove = parseInt($(this).attr("TagIdToRemove"));
+                            privateMethods.spliceTag.call($self, TagIdToRemove, e.data);
+                        });
+
+                        privateMethods.refreshHiddenTagList.call($self);
+
+                        if (!ignoreEvents) { $self.trigger('tm:pushed', tag); }
+
+                        privateMethods.showOrHide.call($self);
+                    });
                 } else {
                     if (tagId > 1) {
                         lastTagId = tagId - 1;
@@ -135,17 +149,7 @@
                     }
                 }
 
-                $("." + newTagRemoveId).on("click", $self, function(e) {
-                    e.preventDefault();
-                    var TagIdToRemove = parseInt($(this).attr("TagIdToRemove"));
-                    privateMethods.spliceTag.call($self, TagIdToRemove, e.data);
-                });
 
-                privateMethods.refreshHiddenTagList.call($self);
-
-                if (!ignoreEvents) { $self.trigger('tm:pushed', tag); }
-
-                privateMethods.showOrHide.call($self);
                 //if (tagManagerOptions.maxTags > 0 && tlis.length >= tagManagerOptions.maxTags) {
                 //  obj.hide();
                 //}
@@ -316,17 +320,25 @@
 
 
             if (-1 !== idx) {
-                tagBeingRemoved = tlis[idx];
-                $self.trigger('tm:splicing', tagBeingRemoved);
-                $("." + $self.data("tm_rndid") + "_" + tagId).remove();
-                tlis.splice(idx, 1);
-                tlid.splice(idx, 1);
-                privateMethods.refreshHiddenTagList.call($self);
-                $self.trigger('tm:spliced', tagBeingRemoved);
+                // tagBeingRemoved = tlis[idx];
+                // $self.trigger('tm:splicing', tagBeingRemoved);
+                $("." + $self.data("tm_rndid") + "_" + tagId).hide(300,'swing', function(){
+                    //$("." + $self.data("tm_rndid") + "_" + tagId).remove();
+                        tagBeingRemoved = tlis[idx];
+                        $self.trigger('tm:splicing', tagBeingRemoved);
+                        $("#" + $self.data("tm_rndid") + "_" + tagId).remove();
+                        tlis.splice(idx, 1);
+                        tlid.splice(idx, 1);
+                        privateMethods.refreshHiddenTagList.call($self);
+                        $self.trigger('tm:spliced', tagBeingRemoved);
+              
+              });
+
                 // console.log(tlis);
             }
-
             privateMethods.showOrHide.call($self);
+
+            //privateMethods.showOrHide.call($self);
             //if (tagManagerOptions.maxTags > 0 && tlis.length < tagManagerOptions.maxTags) {
             //  obj.show();
             //}

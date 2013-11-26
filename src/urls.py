@@ -17,6 +17,7 @@ url_patterns = [
                 (r"/api/tag/?([0-9a-fA-F]{24})?",handlers.tag.TagHandler),
                 (r"/api/tag/trending",handlers.tag.TrendingTagHandler),
                 (r"/api/tag/owner",handlers.tag.OwnerTagHandler),
+                (r"/api/tag/random",handlers.tag.RandomTagHandler),
                 (r"/api/post/?([0-9a-fA-F]{24})?",handlers.post.PostHandler),
                 (r"/api/post/([0-9a-fA-F]{24})/reply/?([0-9a-fA-F]{24})?",handlers.reply.ReplyHandler),
                 (r"/api/profile/?([0-9a-fA-F]{24})?",handlers.profile_image.ProfileImageHandler),

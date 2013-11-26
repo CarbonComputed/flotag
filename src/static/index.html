@@ -1,7 +1,10 @@
 <!DOCTYPE html>
 <html class="login">
 <head>
-<meta charset="utf-8">
+<meta name="description" content="Get quality updates on the topics you care about.">
+<meta name="keywords" content="flotag,social-network,social-media,feed">
+<meta name="author" content="Kevin Carbone">
+<meta charset="UTF-8">
 <title>Flotag</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0,user-scalable=no">
 
@@ -10,11 +13,11 @@
 
 <link rel="stylesheet" href="css/font-awesome.min.css">
 <link rel="stylesheet" type="text/css"
-	href="css/tagmanager.css">
+  href="css/tagmanager.css">
 <link rel="stylesheet" type="text/css"
-	href="css/typeahead.js-bootstrap.css">
+  href="css/typeahead.js-bootstrap.css">
 <link rel="stylesheet" type="text/css"
-	href="css/bootstrap-fileupload.css">
+  href="css/bootstrap-fileupload.css">
 <link rel="stylesheet" type="text/css" href="css/style.css">
 <script src="js/libs/jquery-1.9.1.js"></script>
 <script src="js/libs/jquery.inview.min.js"></script>
@@ -29,7 +32,7 @@
 
 <script src="js/libs/tagmanager.js"></script>
 <script type="text/javascript">
-	window.ENV = window.ENV || {};
+  window.ENV = window.ENV || {};
   window.ENV["EXPERIMENTAL_CONTROL_HELPER"] = true;
 </script>
 <script src="js/libs/ember-1.0.0.js"></script>
@@ -55,7 +58,7 @@
 
 <body>
 
-	
+  
 
 
 <script type="text/x-handlebars">
@@ -102,54 +105,54 @@
         {{/if}}
 
   </nav>
-	<div class="login">
-	<div id="curves"  >
+  <div class="login">
+  <div id="curves"  >
 
-	<canvas id="canvas" class="login-back" width="1500" height="1500"/>
-	</div>
+  <canvas id="canvas" class="login-back" width="1500" height="1500"/>
+  </div>
 
-	<div class="container login">
-			<div class="row">
-				<div class="col-sm-3" id="leftCol">
-					<form id="login-form" class="login-form" {{action login on="submit"}}>
-					<label class="control-label" for="inputUsername">Username</label>
-						
-					  {{input id="inputUsername" value=username type="text" placeholder="Username" class="form-control"}}
-					  <label class="control-label" for="inputPassword">Password</label>
-					  
-					  {{input value=password type="password" placeholder="Password" class="form-control"}}
+  <div class="container login">
+      <div class="row">
+        <div class="col-sm-3" id="leftCol">
+          <form id="login-form" class="login-form" {{action login on="submit"}}>
+          <label class="control-label" for="inputUsername">Username</label>
+            
+            {{input id="inputUsername" value=username type="text" placeholder="Username" class="form-control"}}
+            <label class="control-label" for="inputPassword">Password</label>
+            
+            {{input value=password type="password" placeholder="Password" class="form-control"}}
 
             <button style="margin-top: 5px;" type="submit" class="btn btn-primary" >Sign in</button>
-					</form>
-					<h3>Or</h3>
-					<div class="tm-tag tm-tag-success">
-					<button type="submit" class="btn btn-primary"  onClick="parent.location='register.html'">Register!</button>
-					</div>
+          </form>
+          <h3>Or</h3>
+          <div class="tm-tag tm-tag-success">
+          <button type="submit" class="btn btn-primary"  onClick="parent.location='register.html'">Register!</button>
+          </div>
 
-			</div>
-			<div class="col-sm-6">
-			  <div id="alert" class="alert ">
-		            <button type="button" class="close" data-dismiss="alert">&times;</button>
-		            <h4>Incorrect Login info.</h4> 
-		            
-	          </div>
+      </div>
+      <div class="col-sm-6">
+        <div id="alert" class="alert ">
+                <button type="button" class="close" data-dismiss="alert">&times;</button>
+                <h4>Incorrect Login info.</h4> 
+                
+            </div>
 
-			<div class="info-box tm-tag">
-					<h3><strong>Welcome to Flotag</strong></h3>
-						<h4>Get quality updates on what you care about.</h4>
+      <div class="info-box tm-tag">
+          <h3><strong>Welcome to Flotag</strong></h3>
+            <h4>Get quality updates on what you care about.</h4>
 
-			</div>
+      </div>
 
-			</div>
+      </div>
       <div class="col-sm-3">
 
                   {{partial "_footer"}}
 
       </div>
-		</div>
-		</div>
-	</div>
-	
+    </div>
+    </div>
+  </div>
+  
 </script>
 
 <script type="text/x-handlebars" data-template-name="index">
@@ -161,7 +164,9 @@
          <div class="tm-tag mini-profile">
             <div class="">
                {{#link-to 'user' currentUser._id.$oid}}
-                 <img class="profile-image" {{bindAttr src="controllers.authenticated.profileImgUrl"}} width="50" height="50">
+                 {{#if currentUser.userProfileImageThumbnail}}
+                 <img class="profile-image" {{bindAttr src="currentUser.userProfileImageThumbnail"}} width="50" height="50">
+                 {{/if}}
                  <h4 class="name use-blue">{{currentUser.name}}</h4>
                {{/link-to}}
             </div>
@@ -227,29 +232,38 @@
          <!-- <div class=".col-sm-3"></div> -->
       </div>
       <div class="col-md-2">
+         <div id="randBtn" data-trigger="manual" data-placement="left" data-content="Add some random tags and see what you discover!"  class="random-tag">
+           <a  href="#" {{action "pushRandomTags" 1}} class="btn btn-primary">Add Random Tag</a>
+         </div>
          <div class="divider-horizontal">
            
          </div>
+
          <div class="trending-tags">
+            
+            
             <h4>Trending Tags</h4>
-            <p>Most used tags in the last {{#if Flotag.isEditing}}
-  {{view Flotag.InlineTextField  valueBinding="trendingTime"}}
-{{else}}
-  {{#view Flotag.TextView}}
-    <span title="Double click to edit">
-    {{trendingTime}}    
-    </span>
-  {{/view}}
-{{/if}} hours.</p>
-            {{#if trendingTags}}
-            {{#with currentUser as currentUser}} 
-            {{#each trendingTags}}
-              {{tag-comp user=currentUser tag = this }} x{{number}}<br/>
+            <p>Most used tags in the last 
+                {{#if Flotag.isEditing}}
+                {{view Flotag.InlineTextField  valueBinding="trendingTime"}}
+              {{else}}
+                {{#view Flotag.TextView}}
+                  <span title="Double click to edit">
+                  {{trendingTime}}    
+                  </span>
+                {{/view}}
+              {{/if}} 
+              hours.</p>
+            
+            
+            {{#each tag in trendingTags}}
+
+              {{tag-comp user=currentUser tag = tag }} x{{tag.number}}<br/>
             {{/each}}
-            {{/with}}
-            {{/if}}
+            
          </div>
         {{partial "_footer"}}
+        
       </div>
    </div>
 </div>
@@ -280,8 +294,8 @@
 </script>
 
 <script type="text/x-handlebars" data-template-name="current-tag-view">
-  <span id="currentTagCont"></span>
-            <input type="text" id="current-tags" name="typeahead-current-tags"
+  <span id="currentTagCont" data-trigger="manual" data-placement="left" data-content="Start typing and find your tags!"></span>
+            <input type="text" id="current-tags"  name="typeahead-current-tags"
                placeholder="Tags"
                class="tm-input  typeahead-current-tags form-control" /> 
                <br>
@@ -355,6 +369,7 @@
             <!-- <div class="divider-horizontal"></div> -->
          </div>
          <div class="col-sm-7" id="midCol">
+            {{#if name}}
             <div class="tm-tag user-mini-profile">
                <div class="profile-summary">
                   {{#if userProfileImage}}
@@ -421,7 +436,11 @@
             {{view Flotag.TagsManagerView}}
 
             {{follower-comp user=this followers=controllers.base.followers}}
+            {{else}}
+               <img id="ajax-loader_reply" width="50" style="margin-top:15px;margin-right:20px;" src="/images/ajax-loader_nav_white.gif" >
 
+                <p>Loading User</p>
+            {{/if}}
          </div>
          <div class="col-sm-2">
 
@@ -465,6 +484,8 @@
             <!-- <div class="divider-horizontal"></div> -->
          </div>
          <div class="col-sm-7 col-md-7" id="midCol">
+            {{#if name}}
+
             <div class="tm-tag user-mini-profile">
                <div class="profile-summary">
                   {{#if tagProfileImage}}
@@ -520,7 +541,11 @@
             {{view Flotag.TagsManagerView}}
 
             {{follower-comp user=this followers=controllers.base.followers}}
+           {{else}}
+               <img id="ajax-loader_reply" width="50" style="margin-top:15px;margin-right:20px;" src="/images/ajax-loader_nav_white.gif" >
 
+                <p>Loading Tag</p>
+            {{/if}}
          </div>
          <div class="col-sm-2 col-md-2">
          </div>
@@ -553,14 +578,14 @@
 
 <script type='text/x-handlebars' data-template-name="replying-view">
 
-				<div class="well" style="margin-left: 20px;">
+        <div class="well" style="margin-left: 20px;">
 
-				{{textarea id="replyText" class="form-control col-md-3" valueBinding="replyText" style="resize: vertical; "}}
+        {{textarea id="replyText" class="form-control col-md-3" valueBinding="replyText" style="resize: vertical; "}}
           <div class="reply-btns">
-				  <button {{action "reply"}} type="submit" class="btn btn-primary"><i class="icon-reply"></i>Reply</button>
-				  <button {{action "toggleReplying"}}  type="button" class="btn">Cancel</button>
-				  </div>
-				</div>
+          <button {{action "reply"}} type="submit" class="btn btn-primary"><i class="icon-reply"></i>Reply</button>
+          <button {{action "toggleReplying"}}  type="button" class="btn">Cancel</button>
+          </div>
+        </div>
 </script>
 
 <script type='text/x-handlebars' data-template-name="load-more-view">
@@ -683,7 +708,7 @@
 
 <script data-template-name="tree-branch" type="text/x-handlebars">
     {{#each children itemController="treeNode"}}
-    	{{view Flotag.TreeNodeView}}
+      {{view Flotag.TreeNodeView}}
     {{/each}}
 
 </script>
@@ -713,12 +738,12 @@
 
   {{#if isReplying}}
 
-				{{view Flotag.ReplyingView}}
+        {{view Flotag.ReplyingView}}
   {{/if}}
   {{#if isExpanded}}
     {{render "treeBranch" content}}
   {{/if}}
-  </div>		
+  </div>    
 
 </script>
 
@@ -727,7 +752,7 @@
 </script> -->
 
 <script type="text/x-handlebars" data-template-name="create-tag-view">
-	<div id="myModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div id="myModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
   <div class="modal-dialog">
   <div class="modal-content">
   <div class="modal-header">
@@ -736,7 +761,7 @@
   <div class="preview-image pull-right">
     </div>
     <h3 id="myModalLabel" class="tm-tag tm-tag-success tm-tag-large">{{view.tagInput}}</h3>
-	<p>{{view.tagAboutInput}}</p>
+  <p>{{view.tagAboutInput}}</p>
   </div>
   <div class="modal-body">
           <div id="modal-alert" class="alert ">
@@ -745,7 +770,7 @@
                 
             </div>
 
-		      <div class="fileupload fileupload-new" style="padding-right:20px;" data-provides="fileupload">
+          <div class="fileupload fileupload-new" style="padding-right:20px;" data-provides="fileupload">
 
         <div class="control-group">
               <label>Tag Image</label><br/>
@@ -758,19 +783,19 @@
           <a href="#" class="btn fileupload-exists" data-dismiss="fileupload">Remove</a>
         </div>
       </div> 
-			  <div class="control-group">
-			    <label class="control-label" for="inputName">Name</label>
-			    <div class="controls">
-			    {{input id="inputName" maxlength="25" type="text" class="form-control" rel="popover" data-content="Enter name for tag." valueBinding="view.tagInput" }}
-				 
-			    </div>
-			  </div>
-			  <div class="control-group">
-			    <label class="control-label" for="inputUsername">Description</label>
-			    <div class="controls">
-			    	{{textarea maxlength="200" class="form-control" valueBinding="view.tagAboutInput"}}
-			    </div>
-			  </div>
+        <div class="control-group">
+          <label class="control-label" for="inputName">Name</label>
+          <div class="controls">
+          {{input id="inputName" maxlength="25" type="text" class="form-control" rel="popover" data-content="Enter name for tag." valueBinding="view.tagInput" }}
+         
+          </div>
+        </div>
+        <div class="control-group">
+          <label class="control-label" for="inputUsername">Description</label>
+          <div class="controls">
+            {{textarea maxlength="200" class="form-control" valueBinding="view.tagAboutInput"}}
+          </div>
+        </div>
  
     
   </div>
@@ -900,7 +925,7 @@
                <button {{action "editClicked" this target="view"}} class="btn btn-default pull-right tag-edit-button">Edit</button>
                <a {{action "urlClick" _id.$oid target="view" }} class="lst-item-link">
 
-               <img class="lst-img pull-left img-responsive" {{bindAttr src="tagProfileImage"}} width="50" height="50"> 
+               <img class="lst-img pull-left img-responsive" {{bindAttr src="tagProfileImageThumbnail"}} width="50" height="50"> 
                  <div class="lst-info">
                    <p>{{name}}</p>
                    <p>{{about}}</p>
@@ -986,18 +1011,21 @@
 <div class="arrow-up"></div>
 
 <div id="notifications">
-
-	{{#each notifications}}
+{{#if notifications.firstObject}}
+  {{#each notifications}}
   {{#link-to "user" user.$oid}}
 
-	<div class="notification">
-		<img  {{bindAttr src="userProfileImage"}} class="pull-left not-img">
+  <div class="notification">
+    <img  {{bindAttr src="userProfileImage"}} class="pull-left not-img">
 
-		<p>{{message}}</p>
-	</div>
+    <p>{{message}}</p>
+  </div>
   {{/link-to}}
 
-	{{/each}}
+  {{/each}}
+  {{else}}
+  <p>No notifications :(</p>
+  {{/if}}
 </div>
 </script>
 
@@ -1246,7 +1274,7 @@
 <script type="text/x-handlebars" data-template-name="components/user-list-view">
    <a {{action "urlClick" user._id.$oid}} class="lst-item-link">
    <div class="lst-item">
-   <img class="lst-img pull-left img-responsive" {{bindAttr src="user.userProfileImage"}} width="50" height="50"> 
+   <img class="lst-img pull-left img-responsive" {{bindAttr src="user.userProfileImageThumbnail"}} width="50" height="50"> 
      <div class="lst-info">
        <p>{{user.name}}</p>
        <p>{{user.username}}</p>

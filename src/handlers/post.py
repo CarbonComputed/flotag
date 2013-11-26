@@ -33,7 +33,7 @@ class PostHandler(RestHandler):
             self.write_json(response)
             return  
         try:
-            user = yield gen.Task(UserActions._get_user_by_id,self.current_uid())
+            user,error = yield gen.Task(CallIT.gen_run,UserActions._get_user_by_id,self.current_uid())
             if tags == None or len(tags) == 0:
                 tags = user.default_tags
             else:

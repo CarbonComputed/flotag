@@ -395,6 +395,12 @@ padding-top:5px;
 	background-color: rgba(1,1,1,.15);
 }
 
+.about{
+	margin-top: 40px;
+	padding: 10px 10px 10px 10px;
+	background-color: rgba(255,255,255,.65);
+}
+
 .login .info-box{
 		background-color: rgba(1,1,1,.15);
 		padding: 5px 5px 5px 5px;
@@ -475,6 +481,10 @@ padding: 0px 10px 0px 25px;
     margin-bottom: 0px;
     margin-top: 0px;
 
+}
+
+.nhide{
+	display: none;
 }
 
 /* Arrow */
@@ -665,6 +675,7 @@ input{
 .not-img{
 	width: 50px;
 	height: 50px;
+	margin-right: 5px;
 }
 
 .search-res{
@@ -708,9 +719,7 @@ padding-top: 15px;
 cursor: pointer;
 }
 
-#settings-cog:hover i{
-	background: gray;
-}
+
 
 .reply-btns{
 	margin-top: 10px;
@@ -769,6 +778,7 @@ box-shadow: none;
 	/*padding: 10px 10px 10px 10px;*/
 	border-radius: 4px;
 	border: 2px solid rgb(15, 130, 245);
+
 }
 #not-container{
 	cursor: pointer;;
