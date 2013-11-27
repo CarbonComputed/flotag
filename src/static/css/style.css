@@ -1002,3 +1002,7 @@ margin: 10px 10px 10px 10px;
 	margin-left: 10px !important;
 	font-size: 18px !important;
 }
+
+.btn-primary{
+	/*border: 1px rgb(199,199,199) solid;*/
+}
