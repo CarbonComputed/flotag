@@ -138,8 +138,7 @@ class PostActions:
         {"$sort" : {sort : order,"_id" : 1}},
         {"$skip" : (page -1)*nresults},
         {"$limit" : nresults}])
-#         import time
-#         time.sleep(3)
+
         if callback != None:
             return callback(feed['result'])
         return feed['result']

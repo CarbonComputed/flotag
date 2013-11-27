@@ -45,12 +45,16 @@ else:
 settings = {}
 settings['debug'] = DEPLOYMENT != DeploymentType.PRODUCTION or options.debug
 settings['static_path'] = MEDIA_ROOT
-settings['cookie_secret'] = os.environ['COOKIE_SECRET']
+settings['cookie_secret'] = os.environ.get('COOKIE_SECRET',"fancy")
+if not os.environ.get('COOKIE_SECRET',False):
+    logging.error("COOKE SECRET NOT SET")
 settings['xsrf_cookies'] = False
 settings['template_loader'] = tornado.template.Loader(TEMPLATE_ROOT)
 settings['login_url'] = '/unauthorized'
 settings['local_ip'] = '66.44.225.102'
-settings['captcha_priv'] = os.environ['CAPTCHA_PRIV']
+settings['captcha_priv'] = os.environ.get('CAPTCHA_PRIV',"secret")
+if not os.environ.get('COOKIE_SECRET',False):
+    logging.error("Captcha private not set!")
 settings['log_file'] = options.log
 
 

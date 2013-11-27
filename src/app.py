@@ -29,7 +29,13 @@ def main():
     app = Flotag(20)
     app.listen(options.port)
     logger.info ('http://127.0.0.1:'+str(options.port))
-    tornado.ioloop.IOLoop.instance().start()
+    try:
+        tornado.ioloop.IOLoop.instance().start()
+    except:
+        CallIT.stop_pool();
+    
+        while CallIT.has_pendings():
+              time.sleep(0.05);
 
 if __name__ == "__main__":
     main()

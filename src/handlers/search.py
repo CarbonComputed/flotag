@@ -15,6 +15,8 @@ import base64
 import logging
 import datetime
 
+from util.callit import *
+
 logger = logging.getLogger(__name__)
 
 class SearchHandler(RestHandler):
@@ -31,7 +33,7 @@ class SearchHandler(RestHandler):
             if fields != []:
                 fields = fields.split(",")
             
-            response.model['search'] = yield gen.Task(SearchActions.search,query)
+            response.model['search'],error = yield gen.Task(CallIT.gen_run,SearchActions.search,query)
         except Exception, e:
             response.success = False
             response.args['Message'] = e.message

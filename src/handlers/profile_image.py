@@ -41,6 +41,7 @@ class ProfileImageHandler(BaseHandler):
 class ProfileImageActions:
     @staticmethod
     def get_image(uid,callback=None):
+
         profilepic = ProfileImage.objects(owner=uid).first()
         if profilepic == None:
             profilepic = ProfileImage.objects(id=uid).first()

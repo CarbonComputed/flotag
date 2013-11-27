@@ -159,6 +159,7 @@ class UserHandlerByName(RestHandler):
 class UserMeHandler(UserHandlerByName):
     
     @tornado.web.authenticated
+    @tornado.web.asynchronous
     def get(self):
         super(UserMeHandler, self).get(self.current_username())
 
