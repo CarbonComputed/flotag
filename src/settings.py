@@ -41,16 +41,16 @@ if 'DEPLOYMENT_TYPE' in os.environ:
     DEPLOYMENT = os.environ['DEPLOYMENT_TYPE'].upper()
 else:
     DEPLOYMENT = DeploymentType.SOLO
-
+print os.environ
 settings = {}
 settings['debug'] = DEPLOYMENT != DeploymentType.PRODUCTION or options.debug
 settings['static_path'] = MEDIA_ROOT
-settings['cookie_secret'] = "Enter cookie Secret"
+settings['cookie_secret'] = os.environ['COOKIE_SECRET']
 settings['xsrf_cookies'] = False
 settings['template_loader'] = tornado.template.Loader(TEMPLATE_ROOT)
 settings['login_url'] = '/unauthorized'
-settings['local_ip'] = 'local ip'
-settings['captcha_priv'] = 'Enter captcha private'
+settings['local_ip'] = '66.44.225.102'
+settings['captcha_priv'] = os.environ['CAPTCHA_PRIV']
 settings['log_file'] = options.log
 
 SYSLOG_TAG = "flotag"
