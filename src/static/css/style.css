@@ -115,9 +115,9 @@ border-right: 1px solid gray;
 	background-color:rgb(15, 130, 245);;
 }*/
 .container{
-	margin: 0;
+/*	margin: 0;
 	margin-right: 0;
-	width: 100%;
+	width: 100%;*/
 }
 .navbar .nav>li>a {
 	text-shadow: none;	
@@ -237,7 +237,7 @@ padding-top:5px;
 
 .post{
 	background: #f1f1f1;
-
+	border: rgb(199,199,199) 1px solid;
 	
 }
 #post-tags{
@@ -251,11 +251,12 @@ padding-top:5px;
 
 .post p,.post-tags,.post-user{
 	margin: 5px 5px 5px 5px;
+	font-size: 14px !important;
 }
 
 .post-user img{
-	width: 25px;
-	height: 25px;
+	width: 35px;
+	height: 35px;
 }
 
 #currentTagCont .tm-tag{
@@ -279,6 +280,7 @@ padding-top:5px;
 .post embed{
 	width: 480px;
 	height: 300px;
+	margin-left: 15px;
 }
 
 .user img{
@@ -442,7 +444,7 @@ z-index:-1;
 }
 
 .post{
-	margin: 5px 5px 5px 5px;
+	margin: 5px 5px 15px 5px;
 }
 
 .upvoted{
@@ -990,4 +992,8 @@ margin: 10px 10px 10px 10px;
 
 .lst-item:hover .tag-edit-button{
 	display: inline-block;
+}
+
+.post-tags-1{
+	padding: 5px 5px 5px 5px;
 }

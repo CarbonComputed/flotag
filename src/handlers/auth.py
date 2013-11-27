@@ -63,6 +63,8 @@ class LoginHandler(RestHandler):
 
 class LogoutHandler(RestHandler):
 
+    @tornado.web.asynchronous
+    @gen.coroutine
     def get(self):
         self.clear_cookie("user")
         response = ResponseModel(success=True)
@@ -91,6 +93,8 @@ class PasswordChangeHandler(RestHandler):
 
 class EmailConfirmHandler(RestHandler):
 
+    @tornado.web.asynchronous
+    @gen.coroutine
     def get(self):
         response = ResponseModel()
         try:
@@ -116,6 +120,7 @@ class EmailConfirmHandler(RestHandler):
 
 class AuthActions:
     
+
     @staticmethod
     def _login(username,password,callback=None):
         user = User.objects(username=username.lower()).only("username","password","salt","active").first()

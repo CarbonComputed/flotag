@@ -140,7 +140,7 @@
       <div class="info-box tm-tag">
           <h3><strong>Welcome to Flotag</strong></h3>
             <h4>Get quality updates on what you care about.</h4>
-
+            <h3 class="use-blue"><a href="/about">Learn More</a></h3>
       </div>
 
       </div>
@@ -604,8 +604,18 @@
 
 <script type="text/x-handlebars" data-template-name="post-view">
 <div class="post">
+        <div class="post-tags-1">
+                  {{#with currentUser as currentUser}}
+                  {{#with user as user}}
+                    {{#each tags}}
 
-
+                      {{#if user}}                      
+                      {{tag-comp tag=this user=currentUser poster=user}}
+                      {{/if}}
+                    {{/each}}
+                  {{/with}}
+                  {{/with}}
+                  </div>
    <p>{{{linkify content.content}}}</p>
    
                {{#unless previewHidden}}
@@ -635,16 +645,7 @@
                {{/if}}
             
                <div class="post-tags align-right">
-                  {{#with currentUser as currentUser}}
-                  {{#with user as user}}
-                    {{#each tags}}
 
-                      {{#if user}}                      
-                      {{tag-comp tag=this user=currentUser poster=user}}
-                      {{/if}}
-                    {{/each}}
-                  {{/with}}
-                  {{/with}}
                   {{#link-to "user" user._id.$oid}}
 
                   <div class="tm-tag tm-tag-info post-user" ><img  {{bindAttr src="userProfileImage" }}>{{user.username}}

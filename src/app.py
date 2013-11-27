@@ -26,7 +26,7 @@ class Flotag(tornado.web.Application):
         connect(options.db)
 
 def main():
-    app = Flotag(100)
+    app = Flotag(20)
     app.listen(options.port)
     logger.info ('http://127.0.0.1:'+str(options.port))
     tornado.ioloop.IOLoop.instance().start()

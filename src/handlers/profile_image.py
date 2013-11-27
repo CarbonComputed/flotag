@@ -19,13 +19,36 @@ def_image = open('static/images/placeholder.jpeg', 'rb')
 fbytes = def_image.read()
 def_image.close()
 
-class ProfileImageHandler(BaseHandler):
+class ThreadableMixin:
+    def start_worker (self):
+        threading.Thread (target = self.worker). start ()
+ 
+    def worker (self):
+        try:
+            self._worker ()
+        except tornado.web.HTTPError, e:
+            self.set_status (e.status_code)
+        except:
+            logging.error ("_worker problem ", exc_info = True)
+            self.set_status (500)
+        tornado.ioloop.IOLoop.instance (). add_callback (self.async_callback (self.results))
+ 
+    def results (self):
+        if self.get_status () != 200:
+            self.send_error (self.get_status ())
+            return
+        if hasattr (self, 'res'):
+            self.finish (self.res)
+            return
+        if hasattr (self, 'redir'):
+            self.redirect (self.redir)
+            return
+        self.send_error (500)
 
-    @tornado.web.authenticated
-    @tornado.web.asynchronous
-    @gen.coroutine 
-    def get(self,uid):
-            profilepic,error = yield gen.Task(CallIT.gen_run,ProfileImageActions.get_image, uid)
+class ProfileImageHandler(BaseHandler,ThreadableMixin):
+
+    def _worker (self):
+            profilepic = ProfileImageActions.get_image(self.i)
             if profilepic == None:
                 self.set_header('Content-Type', 'image/jpg' )
                 self.finish(fbytes)
@@ -37,8 +60,13 @@ class ProfileImageHandler(BaseHandler):
             else:
                 image = profilepic.image
             self.set_header('Content-Type', 'image/png' )
-            self.finish(image.read())
-
+            self.res = image.read()
+    
+    @tornado.web.authenticated
+    @tornado.web.asynchronous
+    def get(self,uid):
+        self.i = uid
+        self.start_worker ()
 
 class ProfileImageActions:
     @staticmethod

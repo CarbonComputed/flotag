@@ -434,8 +434,10 @@ Flotag.AuthenticatedController = Ember.Controller.extend({
 
   reset: function(){
 
+  	if(this.get('currentUser')){
+  		this.get('currentUser').voteDict = {};
 
-  	this.get('currentUser').voteDict = {};
+  	}
   	this.set('currentUser',null);
   	this.set('currentUserPromise',null);
   },

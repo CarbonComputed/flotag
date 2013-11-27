@@ -182,7 +182,7 @@
 
         empty : function() {
             var $self = $(this), tlis = $self.data("tlis"), tlid = $self.data("tlid"), tagId;
-
+            if(tlid){
             while (tlid.length > 0) {
                 tagId = tlid.pop();
                 tlis.pop();
@@ -197,6 +197,7 @@
             //if (tagManagerOptions.maxTags > 0 && tlis.length < tagManagerOptions.maxTags) {
             //  obj.show();
             //}
+            }
         },
 
         getTag: function(tagid){
