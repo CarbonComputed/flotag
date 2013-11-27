@@ -767,6 +767,11 @@ box-shadow: none;
 	padding: 3px 6px;
 }
 
+@media (max-width: 992px){
+	#ads{
+		display: none;
+	}
+}
 
 @media (max-width: 768px){
 	#notifications{
