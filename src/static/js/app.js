@@ -1356,7 +1356,7 @@ Flotag.IndexView = Ember.View.extend(Flotag.Scrolling,{
     	that.get('controller').send("pushCurrentTag",tagBeingAdded);
     });
 
-	$('#ads-load').appendTo("#ads").css("display", "block");
+	//$('#ads-load').appendTo("#ads").css("display", "block");
 
 // var img = $('.preview-img');
 // var zoomWidthIncrement = img.width() * 1/3;
