@@ -20,7 +20,7 @@ define("log", default=None, help="Log to the given file", type=str)
 
 tornado.options.parse_command_line()
 
-MEDIA_ROOT = path(ROOT, 'media')
+MEDIA_ROOT = path(ROOT, 'static')
 TEMPLATE_ROOT = path(ROOT, 'templates')
 
 # Deployment Configuration
@@ -41,7 +41,7 @@ if 'DEPLOYMENT_TYPE' in os.environ:
     DEPLOYMENT = os.environ['DEPLOYMENT_TYPE'].upper()
 else:
     DEPLOYMENT = DeploymentType.SOLO
-print os.environ
+
 settings = {}
 settings['debug'] = DEPLOYMENT != DeploymentType.PRODUCTION or options.debug
 settings['static_path'] = MEDIA_ROOT
@@ -52,6 +52,7 @@ settings['login_url'] = '/unauthorized'
 settings['local_ip'] = '66.44.225.102'
 settings['captcha_priv'] = os.environ['CAPTCHA_PRIV']
 settings['log_file'] = options.log
+
 
 SYSLOG_TAG = "flotag"
 SYSLOG_FACILITY = logging.handlers.SysLogHandler.LOG_LOCAL2

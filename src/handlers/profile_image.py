@@ -15,43 +15,18 @@ import cStringIO
 
 from util.callit import *
 logger = logging.getLogger(__name__)
-def_image = open('static/images/placeholder.jpeg', 'rb')
-fbytes = def_image.read()
-def_image.close()
 
-class ThreadableMixin:
-    def start_worker (self):
-        threading.Thread (target = self.worker). start ()
- 
-    def worker (self):
-        try:
-            self._worker ()
-        except tornado.web.HTTPError, e:
-            self.set_status (e.status_code)
-        except:
-            logging.error ("_worker problem ", exc_info = True)
-            self.set_status (500)
-        tornado.ioloop.IOLoop.instance (). add_callback (self.async_callback (self.results))
- 
-    def results (self):
-        if self.get_status () != 200:
-            self.send_error (self.get_status ())
-            return
-        if hasattr (self, 'res'):
-            self.finish (self.res)
-            return
-        if hasattr (self, 'redir'):
-            self.redirect (self.redir)
-            return
-        self.send_error (500)
 
-class ProfileImageHandler(BaseHandler,ThreadableMixin):
+class ProfileImageHandler(BaseHandler):
 
-    def _worker (self):
-            profilepic = ProfileImageActions.get_image(self.i)
+    @tornado.web.authenticated
+    @tornado.web.asynchronous
+    @gen.coroutine 
+    def get(self,uid):
+            profilepic,error = yield gen.Task(CallIT.gen_run,ProfileImageActions.get_image, uid)
             if profilepic == None:
                 self.set_header('Content-Type', 'image/jpg' )
-                self.finish(fbytes)
+                self.render(self.settings['static_path']+"/images/placeholder.jpeg")
                 return
             thumbnail = self.get_argument("thumbnail",default=False)
             image = None
@@ -60,13 +35,8 @@ class ProfileImageHandler(BaseHandler,ThreadableMixin):
             else:
                 image = profilepic.image
             self.set_header('Content-Type', 'image/png' )
-            self.res = image.read()
-    
-    @tornado.web.authenticated
-    @tornado.web.asynchronous
-    def get(self,uid):
-        self.i = uid
-        self.start_worker ()
+            self.finish(image.read())
+
 
 class ProfileImageActions:
     @staticmethod
