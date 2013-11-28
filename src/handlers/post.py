@@ -112,7 +112,6 @@ class PostActions:
             return posts  
         
     @staticmethod
-    @memoize("_get_feed")
     def _get_feed(user,tags,nresults=25,page=1,sort="erank",callback=None):
         post_coll = Post._get_collection()
         order = -1
