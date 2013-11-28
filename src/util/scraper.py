@@ -32,6 +32,8 @@ from BeautifulSoup import BeautifulSoup
 from funcs import *
 import random
 
+from util.memoize import *
+
 chunk_size = 1024
 thumbnail_size = 70, 70
 
@@ -208,7 +210,8 @@ class Scraper:
             for i in images:
                 image_url = urlparse.urljoin(self.url, i['src'])
                 yield image_url
-                
+    
+    
     def link_data(self):
         if not self.content:
             self.download()
@@ -1482,6 +1485,7 @@ for scraper in [ EmbedlyOEmbed,
 
 deepscrapers = [YoutubeEmbedDeepScraper]
 
+@memoize("get_media_embed")
 def get_media_embed(media_object):
     if media_object == None:
         return None
@@ -1937,11 +1941,19 @@ class Link(object):
         self.header = header
         self.data = data
 
+@memoize("get_link")
+def memoized_link_data(url,h):
+    return h.link_data()
+
+@memoize("largest_image")
+def memoized_largest_img(url,h):
+    return h.largest_image_url()
+
 
 def get_link(url,callback = None):
     h = make_scraper(url)
     
-    data = h.link_data()
+    data = memoized_link_data(url,h)
     mo = h.media_object()
     if mo and mo.get('video_id',None):
         me = get_media_embed(mo)
@@ -1954,7 +1966,7 @@ def get_link(url,callback = None):
     link = Link(url,img,mec,None,data)
     link.data['embed'] = link.embed
     if img == None:
-        link.data['image'] = h.largest_image_url()
+        link.data['image'] = memoized_largest_img(url,h)
     if callback != None:
         return callback(link)
     return link

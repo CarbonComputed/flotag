@@ -9,6 +9,8 @@ import logging
 
 from util.callit import *
 
+from util.memoize import *
+
 logger = logging.getLogger(__name__)
 
 
@@ -39,8 +41,12 @@ class ThreadableMixin:
         self.send_error (500)
 
 
-class MediaHandler(tornado.web.RequestHandler,ThreadableMixin):
-    def _worker (self):
+class MediaHandler(tornado.web.RequestHandler):
+    
+    
+    @tornado.web.asynchronous
+    @gen.coroutine
+    def get(self):
         url = self.get_argument("url",strip=True)
         height = self.get_argument("height",strip=True,default="250")
         width = self.get_argument("width",strip=True,default="480")
@@ -48,17 +54,13 @@ class MediaHandler(tornado.web.RequestHandler,ThreadableMixin):
             self.finish()
             return
         embed = self.get_argument("embed",strip=True,default=False)
-        link = util.scraper.get_link(url)
+        link,error = yield gen.Task(CallIT.gen_run,util.scraper.get_link,url)
         try:
-            self.res = link.data
+            res = link.data
         except Exception, e:
             logger.error(e)
-    
-    @tornado.web.asynchronous
-    def get(self):
-        self.start_worker ()
+        self.finish(res)
 
-       
 #         if embed:
 #             if link.embed != None:
 # #                 link.embed = re.sub(r'width="\d+"', 'width='+width, link.embed)

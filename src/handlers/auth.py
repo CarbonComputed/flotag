@@ -6,6 +6,7 @@ from handlers.user import UserActions
 
 from tornado import gen
 import tornado.web
+import tornado.auth
 
 from handlers.base import RestHandler
 import hashlib
@@ -117,6 +118,26 @@ class EmailConfirmHandler(RestHandler):
             logger.error(e)
         self.write_json(response) 
 
+class TwitterLoginHandler(tornado.web.RequestHandler,
+                          tornado.auth.TwitterMixin):
+    pass
+#     @tornado.web.asynchronous
+#     @tornado.gen.coroutine
+#     def get(self):
+#         if self.get_argument("oauth_token", None):
+#             user = yield self.get_authenticated_user()
+#             #check if profile exists in database
+#                 #set cookie
+#             #otherwise
+#                 #if username already exists:
+#                        #generate name
+#                 #other wise create profile
+#                     #set cookie
+#              
+#             print user.username
+#             # Save the user using e.g. set_secure_cookie()
+#         else:
+#             yield self.authorize_redirect()
 
 class AuthActions:
     

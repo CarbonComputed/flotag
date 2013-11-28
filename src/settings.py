@@ -53,6 +53,8 @@ settings['template_loader'] = tornado.template.Loader(TEMPLATE_ROOT)
 settings['login_url'] = '/unauthorized'
 settings['local_ip'] = '66.44.225.102'
 settings['captcha_priv'] = os.environ.get('CAPTCHA_PRIV',"secret")
+settings['twitter_consumer_key'] = os.environ.get('TWITTER_KEY')
+settings['twitter_consumer_secret'] = os.environ.get("TWITTER_SECRET")
 if not os.environ.get('COOKIE_SECRET',False):
     logging.error("Captcha private not set!")
 settings['log_file'] = options.log

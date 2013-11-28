@@ -1831,12 +1831,14 @@ Flotag.EditProfileView = Em.View.extend({
 			}
 			else{
 				$('#editModal').modal('hide');
-
 				showSuccess($('#alert'),"Saved Changes");
 			}
-			self.get('controller.controllers.application').refreshUser().then(null,function(user){
+			self.get('controller.controllers.authenticated').refreshUser().then(null,function(user){
 							//possibly update feed
-	
+				self.set('controller.base.editViewVisible',false);
+
+				// self.set('editNameInput', self.get('controller').get('currentUser').get('name'));
+	   //  		self.set('editAboutInput', self.get('controller').get('currentUser').get('about'));
 			});
   		});
 

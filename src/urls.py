@@ -26,6 +26,7 @@ url_patterns = [
                 (r"/api/nots/?",handlers.user.NotificationHandler),
                 (r"/api/nots/read/?([0-9a-fA-F]{24})?/?",handlers.user.ReadNotificationHandler),
                 (r"/api/auth/login",handlers.auth.LoginHandler),
+                (r"/api/auth/twitter",handlers.auth.TwitterLoginHandler),
                 (r"/api/auth/logout",handlers.auth.LogoutHandler),
                 (r'/api/unauthorized',handlers.base.UnauthorizedHandler),
                 (r'/api/search',handlers.search.SearchHandler),

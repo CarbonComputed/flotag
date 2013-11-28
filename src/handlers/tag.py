@@ -9,6 +9,7 @@ from mongoengine import *
 from datetime import date, timedelta
 
 from util.callit import *
+from util.memoize import *
 
 from tornado import gen
 import tornado.web
@@ -233,6 +234,7 @@ class TagActions:
             return tags   
 
     @staticmethod
+    @memoize("_get_tags_by_trend")
     def _get_tags_by_trend(hoursago=24,nresults=50,page=1,callback=None):
         
         d=datetime.datetime.utcnow( )-timedelta(hours=hoursago)

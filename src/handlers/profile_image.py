@@ -13,6 +13,8 @@ import hashlib
 import logging
 import cStringIO
 
+from util.memoize import *
+
 from util.callit import *
 logger = logging.getLogger(__name__)
 
@@ -39,7 +41,9 @@ class ProfileImageHandler(BaseHandler):
 
 
 class ProfileImageActions:
+    
     @staticmethod
+    @memoize("get_image")
     def get_image(uid,callback=None):
 
         profilepic = ProfileImage.objects(owner=uid).first()

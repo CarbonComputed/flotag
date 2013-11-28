@@ -1,6 +1,6 @@
 from handlers.base import RestHandler
 from models.response import ResponseModel
-from models.user import User,Vote,Notification,TagNotification
+from models.user import User,Vote,Notification,TagNotification,TwitterUser
 from models.tag import *
 from models.profile_image import ProfileImage
 from handlers.profile_image import ProfileImageActions
@@ -547,5 +547,36 @@ class UserActions:
         if callback != None:
             return callback(user)
         return user
+    
+    
+    @staticmethod
+    def _create_oauth_user(twitter_user,username,callback=None):
+        nuser = TwitterUser()
+        nuser.username = username
+        nuser.about = twitter_user.description
+        nuser.profile_img = twitter_user.profile_image_url_https
+        nuser.name = twitter_user.name
+        nuser.save()
+        if callback != None:
+            return callback(nuser)
+        return nuser
+    
+    @staticmethod
+    def _update_oauth_user(twitter_user,username,callback=None):
+        nuser = TwitterUser.objects(username=username).first()
+        nuser.username = username
+        nuser.about = twitter_user.description
+        nuser.profile_img = twitter_user.profile_image_url_https
+        nuser.name = twitter_user.name
+        nuser.save()
+        if callback != None:
+            return callback(nuser)
+        return nuser
+    
+    
+    @staticmethod
+    def _check_username_exists(username,callback=None):
+        pass
+        
 
     

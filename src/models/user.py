@@ -7,6 +7,20 @@ EMAIL_REGEX = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
 USER_REGEX = r'^.{0,150}$'
 
 class User(Tag):
+    meta = {'allow_inheritance': True}
+    email = EmailField()
+    username = StringField(required = True)
+    current_tags = ListField(ObjectIdField())
+    default_tags = ListField(ObjectIdField())
+    reputation = IntField(default = 0)
+    votes = ListField(EmbeddedDocumentField('Vote'))
+    messages = ListField(EmbeddedDocumentField('Message'))
+    notifications = ListField(EmbeddedDocumentField('Notification'))
+    date_created = DateTimeField(default=datetime.datetime.utcnow)
+    date_modified = DateTimeField(default=datetime.datetime.utcnow)
+    type = IntField(default=1)
+
+class ExtendedUser(Tag):
     meta = {
         'indexes': [
             { 'fields': ['username'], 'unique': True,
@@ -29,6 +43,10 @@ class User(Tag):
     reg_id = ObjectIdField(default=ObjectId)
     date_created = DateTimeField(default=datetime.datetime.utcnow)
     date_modified = DateTimeField(default=datetime.datetime.utcnow)
+
+class TwitterUser(User):
+        type = IntField(default=2)
+
 
 class Notification(EmbeddedDocument):
     meta = {'allow_inheritance': True}
