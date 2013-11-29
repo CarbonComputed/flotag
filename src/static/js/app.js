@@ -1373,6 +1373,17 @@ Flotag.UserView = Ember.View.extend({
 	templateName: 'user',
 	didInsertElement: function(){
 		this.get('controller').send('documentReady');
+		$('#ads-load').appendTo("#ads").css("display", "block");
+
+	},
+
+});
+
+Flotag.TagView = Ember.View.extend({
+	templateName: 'tag',
+	didInsertElement: function(){
+		this.get('controller').send('documentReady');
+		$('#ads-load').appendTo("#ads").css("display", "block");
 
 	},
 
