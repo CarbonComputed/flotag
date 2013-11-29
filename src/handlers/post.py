@@ -41,7 +41,7 @@ class PostHandler(RestHandler):
             else:
                 tags = loads(tags)
 
-            response.model['posts'],error = yield gen.Task(CallIT.gen_run,PostActions._get_feed,user, tags, nresults, page, sort)
+            response.model['posts'],error = yield gen.Task(CallIT.gen_run,PostActions._get_feed,user, tags, nresults, page, sort,_update=True)
         except Exception, e:
             response.success = False
             response.args['Message'] = e.message
@@ -112,6 +112,7 @@ class PostActions:
             return posts  
         
     @staticmethod
+    @memoize("_get_feed")
     def _get_feed(user,tags,nresults=25,page=1,sort="erank",callback=None):
         post_coll = Post._get_collection()
         order = -1
@@ -144,6 +145,10 @@ class PostActions:
         if callback != None:
             return callback(feed['result'])
         return feed['result']
+    
+    @staticmethod
+    def _get_feed_cache(user,tags,nresults=25,page=1,sort="erank",callback=None):
+        pass
         
         
     @staticmethod
