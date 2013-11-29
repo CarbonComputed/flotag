@@ -71,6 +71,11 @@ img{
 
 }
 
+#postTagCont{
+	vertical-align: top;
+
+}
+
 #postTextArea{
 	display: inline-block !important;
 	vertical-align: middle;
