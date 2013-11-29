@@ -1355,9 +1355,9 @@ Flotag.IndexView = Ember.View.extend(Flotag.Scrolling,{
 
     	that.get('controller').send("pushCurrentTag",tagBeingAdded);
     });
-    var adcode = $("#ads-load");
+    var adcode = $("#ads-load").clone();
 	$('#ads-load').appendTo("#ads").css("display", "block");
-	adcode.appendTo('#ads-load');
+	adcode.appendTo('body');
 
 // var img = $('.preview-img');
 // var zoomWidthIncrement = img.width() * 1/3;
@@ -1375,8 +1375,9 @@ Flotag.UserView = Ember.View.extend({
 	templateName: 'user',
 	didInsertElement: function(){
 		this.get('controller').send('documentReady');
-		$('#ads-load').appendTo("#ads").css("display", "block");
-
+    var adcode = $("#ads-load").clone();
+	$('#ads-load').appendTo("#ads").css("display", "block");
+	adcode.appendTo('body');
 	},
 
 });
@@ -1385,8 +1386,9 @@ Flotag.TagView = Ember.View.extend({
 	templateName: 'tag',
 	didInsertElement: function(){
 		this.get('controller').send('documentReady');
-		$('#ads-load').appendTo("#ads").css("display", "block");
-
+    var adcode = $("#ads-load").clone();
+	$('#ads-load').appendTo("#ads").css("display", "block");
+	adcode.appendTo('body');
 	},
 
 });
