@@ -401,11 +401,11 @@
             </div>
             <h3 class="flo-head">{{name}}'s Tags</h3>
             <br/> 
-            {{#with currentUser as currentUser}} 
-            {{#each userCurrTags}}
-            {{tag-comp user=currentUser tag = this }}
+            
+            {{#each t in userCurrTags}}
+            {{tag-comp user=currentUser tag = t }}
             {{/each}}
-            {{/with}}
+            
             <br/>
             <div class="divider-horizontal"></div>
             <form class="well">
