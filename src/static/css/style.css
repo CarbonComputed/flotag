@@ -279,7 +279,7 @@ padding-top:5px;
 .post img{
 	max-height: 350px;
       padding: 5px 5px 2px;
-      max-width: 350px;
+      display: inline;
 }
 
 .post embed{
