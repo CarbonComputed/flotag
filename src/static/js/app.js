@@ -3799,7 +3799,9 @@ $(document).ready(function() {
 	// 	  login($(this));
 	// 	  return false;
 	// });
-
+$(function() {
+    FastClick.attach(document.body);
+});
 	$('#register-form').submit(function() {
 		  register($(this));
 		  return false;
