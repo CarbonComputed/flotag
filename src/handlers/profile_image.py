@@ -43,7 +43,7 @@ class ProfileImageHandler(BaseHandler):
 class ProfileImageActions:
     
     @staticmethod
-    @memoize("get_image")
+    # @memoize("get_image")
     def get_image(uid,callback=None):
 
         profilepic = ProfileImage.objects(owner=uid).first()
